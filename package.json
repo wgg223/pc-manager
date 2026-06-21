@@ -1,6 +1,6 @@
 {
   "name": "lao-wang-wei-hu-bao",
-  "version": "1.2.0",
+  "version": "2.0.0",
   "description": "老王维护宝 - 电脑定时任务与系统维护工具",
   "main": "electron/main.js",
   "scripts": {

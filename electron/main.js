@@ -1,6 +1,6 @@
 const { app, BrowserWindow, ipcMain, dialog, shell } = require('electron')
 const path = require('path')
-const { exec } = require('child_process')
+const { exec, execFile } = require('child_process')
 const fs = require('fs')
 
 let mainWindow
@@ -243,7 +243,9 @@ ipcMain.handle('toggle-startup-item', async (event, name, enabled) => {
 // 网络重置
 ipcMain.handle('reset-dns', async () => {
   return new Promise((resolve, reject) => {
-    exec('ipconfig /flushdns', (error) => {
+    const psScript = `Start-Process -FilePath 'ipconfig' -ArgumentList '/flushdns' -Verb RunAs -Wait`
+    const encoded = Buffer.from(psScript, 'utf16le').toString('base64')
+    execFile('powershell.exe', ['-ExecutionPolicy', 'Bypass', '-EncodedCommand', encoded], (error) => {
       if (error) reject(error.message)
       else resolve(true)
     })
@@ -252,7 +254,9 @@ ipcMain.handle('reset-dns', async () => {
 
 ipcMain.handle('reset-winsock', async () => {
   return new Promise((resolve, reject) => {
-    exec('netsh winsock reset', (error) => {
+    const psScript = `Start-Process -FilePath 'netsh' -ArgumentList 'winsock reset' -Verb RunAs -Wait`
+    const encoded = Buffer.from(psScript, 'utf16le').toString('base64')
+    execFile('powershell.exe', ['-ExecutionPolicy', 'Bypass', '-EncodedCommand', encoded], (error) => {
       if (error) reject(error.message)
       else resolve(true)
     })
@@ -261,7 +265,9 @@ ipcMain.handle('reset-winsock', async () => {
 
 ipcMain.handle('reset-ip', async () => {
   return new Promise((resolve, reject) => {
-    exec('ipconfig /release && ipconfig /renew', (error) => {
+    const psScript = `Start-Process -FilePath 'cmd' -ArgumentList '/c ipconfig /release & ipconfig /renew' -Verb RunAs -Wait`
+    const encoded = Buffer.from(psScript, 'utf16le').toString('base64')
+    execFile('powershell.exe', ['-ExecutionPolicy', 'Bypass', '-EncodedCommand', encoded], (error) => {
       if (error) reject(error.message)
       else resolve(true)
     })
@@ -313,8 +319,16 @@ ipcMain.handle('uninstall-software', async (event, id, uninstallString) => {
 // 壁纸设置
 ipcMain.handle('set-wallpaper', async (event, filePath) => {
   return new Promise((resolve, reject) => {
-    const cmd = `powershell -Command "Add-Type -TypeDefinition 'using System.Runtime.InteropServices; public class Wallpaper { [DllImport(\"user32.dll\", CharSet=CharSet.Auto)] public static extern int SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni); }'; [Wallpaper]::SystemParametersInfo(0x0014, 0, '${filePath.replace(/\\/g, '\\\\')}', 0x01)"`
-    exec(cmd, (error) => {
+    const psScript = `Add-Type -TypeDefinition @'
+using System.Runtime.InteropServices;
+public class Wallpaper {
+    [DllImport("user32.dll", CharSet=CharSet.Auto)]
+    public static extern int SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);
+}
+'@
+[Wallpaper]::SystemParametersInfo(0x0014, 0, '${filePath.replace(/'/g, "''")}', 0x01)`
+    const encoded = Buffer.from(psScript, 'utf16le').toString('base64')
+    execFile('powershell.exe', ['-ExecutionPolicy', 'Bypass', '-EncodedCommand', encoded], (error) => {
       if (error) reject(error.message)
       else resolve(true)
     })
