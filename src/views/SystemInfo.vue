@@ -89,7 +89,7 @@
             <div v-for="(gpu, index) in gpus" :key="index" class="gpu-item">
               <p><strong>鍨嬪彿:</strong> {{ gpu.model || '-' }}</p>
               <p><strong>鍒堕€犲晢:</strong> {{ gpu.vendor || '-' }}</p>
-              <p><strong>鏄惧瓨:</strong> {{ gpu.vram ? (gpu.vram / 1024).toFixed(0) + ' MB' : '-' }}</p>
+              <p><strong>鏄惧瓨:</strong> {{ gpu.vram ? formatVram(gpu.vram) : '-' }}</p>
               <el-divider v-if="index < gpus.length - 1" />
             </div>
           </div>
@@ -184,6 +184,13 @@ let timer = null
 const formatGB = (bytes) => {
   if (!bytes) return '0 GB'
   return (bytes / 1024 / 1024 / 1024).toFixed(1) + ' GB'
+}
+
+const formatVram = (vram) => {
+  if (!vram) return '-'
+  if (vram >= 1048576) return (vram / 1048576).toFixed(0) + ' GB'
+  if (vram >= 1024) return (vram / 1024).toFixed(0) + ' MB'
+  return vram + ' KB'
 }
 
 const getProgressColor = (percentage) => {
