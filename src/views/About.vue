@@ -23,7 +23,7 @@
           <el-descriptions-item label="褰撳墠鐗堟湰">v{{ version }}</el-descriptions-item>
           <el-descriptions-item label="鎶€鏈爤">Electron + Vue 3 + Element Plus</el-descriptions-item>
           <el-descriptions-item label="寮€婧愬湴鍧€">
-            <el-link type="primary" @click="openGithub">https://github.com/wgg223/systeam-weihu.git</el-link>
+            <el-link type="primary" @click="openGithub">https://github.com/wgg223/pc-manager</el-link>
           </el-descriptions-item>
         </el-descriptions>
       </div>
@@ -131,7 +131,7 @@
         
         <h4>鍏€佽仈绯绘柟寮?/h4>
         <p>濡傛湁浠讳綍闂鎴栧缓璁紝璇烽€氳繃浠ヤ笅鏂瑰紡鑱旂郴鎴戜滑锛?/p>
-        <p>GitHub: <el-link type="primary" @click="openGithub">https://github.com/wgg223/systeam-weihu.git</el-link></p>
+        <p>GitHub: <el-link type="primary" @click="openGithub">https://github.com/wgg223/pc-manager</el-link></p>
       </div>
       <template #footer>
         <el-button @click="agreementVisible = false">鍏抽棴</el-button>
@@ -186,7 +186,7 @@ const checkUpdate = async () => {
   updateStatus.value = 'checking'
   
   try {
-    const response = await fetch('https://api.github.com/repos/wgg223/systeam-weihu/releases/latest')
+    const response = await fetch('https://api.github.com/repos/wgg223/pc-manager/releases/latest')
     if (response.ok) {
       const data = await response.json()
       const latestVersion = data.tag_name?.replace('v', '') || '0.0.0'
@@ -218,7 +218,7 @@ const compareVersions = (v1, v2) => {
 }
 
 const openGithub = () => {
-  window.electronAPI.openExternal('https://github.com/wgg223/systeam-weihu.git')
+  window.electronAPI.openExternal('https://github.com/wgg223/pc-manager')
 }
 
 const showAgreement = () => {
