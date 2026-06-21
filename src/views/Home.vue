@@ -1,8 +1,8 @@
 <template>
   <div class="home-container">
     <div class="page-header">
-      <h2>瀹氭椂浠诲姟</h2>
-      <p class="subtitle">璁剧疆鐢佃剳瀹氭椂閲嶅惎銆佸叧鏈烘垨浼戠湢</p>
+      <h2>定时任务</h2>
+      <p class="subtitle">设置电脑定时重启、关机或休眠</p>
     </div>
     
     <div class="task-grid">
@@ -10,13 +10,13 @@
         <template #header>
           <div class="card-header">
             <el-icon class="card-icon restart"><RefreshRight /></el-icon>
-            <span>瀹氭椂閲嶅惎</span>
+            <span>定时重启</span>
           </div>
         </template>
         <div class="card-content">
           <el-time-picker
             v-model="restartTime"
-            placeholder="閫夋嫨鏃堕棿"
+            placeholder="选择时间"
             format="HH:mm"
             value-format="HH:mm"
             style="width: 100%"
@@ -27,7 +27,7 @@
             @click="addTask('restart', restartTime)"
             :disabled="!restartTime"
           >
-            娣诲姞浠诲姟
+            添加任务
           </el-button>
         </div>
       </el-card>
@@ -36,13 +36,13 @@
         <template #header>
           <div class="card-header">
             <el-icon class="card-icon shutdown"><SwitchButton /></el-icon>
-            <span>瀹氭椂鍏虫満</span>
+            <span>定时关机</span>
           </div>
         </template>
         <div class="card-content">
           <el-time-picker
             v-model="shutdownTime"
-            placeholder="閫夋嫨鏃堕棿"
+            placeholder="选择时间"
             format="HH:mm"
             value-format="HH:mm"
             style="width: 100%"
@@ -53,7 +53,7 @@
             @click="addTask('shutdown', shutdownTime)"
             :disabled="!shutdownTime"
           >
-            娣诲姞浠诲姟
+            添加任务
           </el-button>
         </div>
       </el-card>
@@ -62,13 +62,13 @@
         <template #header>
           <div class="card-header">
             <el-icon class="card-icon hibernate"><Moon /></el-icon>
-            <span>瀹氭椂浼戠湢</span>
+            <span>定时休眠</span>
           </div>
         </template>
         <div class="card-content">
           <el-time-picker
             v-model="hibernateTime"
-            placeholder="閫夋嫨鏃堕棿"
+            placeholder="选择时间"
             format="HH:mm"
             value-format="HH:mm"
             style="width: 100%"
@@ -79,7 +79,7 @@
             @click="addTask('hibernate', hibernateTime)"
             :disabled="!hibernateTime"
           >
-            娣诲姞浠诲姟
+            添加任务
           </el-button>
         </div>
       </el-card>
@@ -88,46 +88,47 @@
     <el-card class="task-list-card" shadow="hover">
       <template #header>
         <div class="card-header">
-          <span>浠诲姟鍒楄〃</span>
+          <span>任务列表</span>
           <el-button type="danger" size="small" @click="cancelAllTasks">
-            鍙栨秷鎵€鏈変换鍔?          </el-button>
+            取消所有任务
+          </el-button>
         </div>
       </template>
       
-      <el-table :data="tasks" style="width: 100%" empty-text="鏆傛棤浠诲姟">
-        <el-table-column prop="type" label="绫诲瀷" width="120">
+      <el-table :data="tasks" style="width: 100%" empty-text="暂无任务">
+        <el-table-column prop="type" label="类型" width="120">
           <template #default="{ row }">
             <el-tag :type="getTagType(row.type)">{{ getTypeName(row.type) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="time" label="鎵ц鏃堕棿" width="150" />
-        <el-table-column prop="countdown" label="鍊掕鏃? width="150">
+        <el-table-column prop="time" label="执行时间" width="150" />
+        <el-table-column prop="countdown" label="倒计时" width="150">
           <template #default="{ row }">
             <span class="countdown">{{ row.countdown }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="鐘舵€? width="100">
+        <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
             <el-tag :type="row.active ? 'success' : 'info'" size="small">
-              {{ row.active ? '鎵ц涓? : '宸叉殏鍋? }}
+              {{ row.active ? '执行中' : '已暂停' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="鎿嶄綔" width="150">
+        <el-table-column label="操作" width="150">
           <template #default="{ row, $index }">
             <el-button 
               :type="row.active ? 'warning' : 'success'" 
               size="small"
               @click="toggleTask($index)"
             >
-              {{ row.active ? '鏆傚仠' : '鍚敤' }}
+              {{ row.active ? '暂停' : '启用' }}
             </el-button>
             <el-button 
               type="danger" 
               size="small"
               @click="removeTask($index)"
             >
-              鍒犻櫎
+              删除
             </el-button>
           </template>
         </el-table-column>
@@ -147,7 +148,7 @@ const tasks = ref([])
 let timer = null
 
 const getTypeName = (type) => {
-  const names = { restart: '閲嶅惎', shutdown: '鍏虫満', hibernate: '浼戠湢' }
+  const names = { restart: '重启', shutdown: '关机', hibernate: '休眠' }
   return names[type] || type
 }
 
@@ -203,15 +204,15 @@ const executeTask = async (task) => {
         break
     }
     task.active = false
-    ElMessage.success(`${getTypeName(task.type)}浠诲姟宸叉墽琛宍)
+    ElMessage.success(`${getTypeName(task.type)}任务已执行`)
   } catch (error) {
-    ElMessage.error(`鎵ц澶辫触: ${error}`)
+    ElMessage.error(`执行失败: ${error}`)
   }
 }
 
 const addTask = (type, time) => {
   if (!time) {
-    ElMessage.warning('璇烽€夋嫨鏃堕棿')
+    ElMessage.warning('请选择时间')
     return
   }
   
@@ -222,7 +223,7 @@ const addTask = (type, time) => {
     active: true
   })
   
-  ElMessage.success('浠诲姟宸叉坊鍔?)
+  ElMessage.success('任务已添加')
   
   if (type === 'restart') restartTime.value = ''
   else if (type === 'shutdown') shutdownTime.value = ''
@@ -239,13 +240,13 @@ const toggleTask = (index) => {
 
 const cancelAllTasks = async () => {
   try {
-    await ElMessageBox.confirm('纭畾瑕佸彇娑堟墍鏈変换鍔″悧锛?, '纭', {
+    await ElMessageBox.confirm('确定要取消所有任务吗？', '确认', {
       type: 'warning'
     })
     
     await window.electronAPI.cancelPowerAction()
     tasks.value = []
-    ElMessage.success('鎵€鏈変换鍔″凡鍙栨秷')
+    ElMessage.success('所有任务已取消')
   } catch {
     // User cancelled
   }

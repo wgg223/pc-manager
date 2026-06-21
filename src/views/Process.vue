@@ -1,8 +1,8 @@
 <template>
   <div class="process-container">
     <div class="page-header">
-      <h2>杩涚▼绠＄悊</h2>
-      <p class="subtitle">鏌ョ湅鍜岀鐞嗙郴缁熻繍琛岃繘绋?/p>
+      <h2>进程管理</h2>
+      <p class="subtitle">查看和管理系统运行进程</p>
     </div>
     
     <el-card class="process-card" shadow="hover">
@@ -11,7 +11,7 @@
           <div class="search-section">
             <el-input
               v-model="searchText"
-              placeholder="鎼滅储杩涚▼..."
+              placeholder="搜索进程..."
               clearable
               style="width: 300px"
             >
@@ -22,7 +22,7 @@
           </div>
           <el-button type="primary" @click="refreshProcesses">
             <el-icon><Refresh /></el-icon>
-            鍒锋柊
+            刷新
           </el-button>
         </div>
       </template>
@@ -34,7 +34,7 @@
         v-loading="loading"
       >
         <el-table-column prop="pid" label="PID" width="80" sortable />
-        <el-table-column prop="name" label="杩涚▼鍚嶇О" min-width="200" sortable />
+        <el-table-column prop="name" label="进程名称" min-width="200" sortable />
         <el-table-column prop="cpu" label="CPU %" width="100" sortable>
           <template #default="{ row }">
             <el-tag :type="getCpuTagType(row.cpu)" size="small">
@@ -42,26 +42,26 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="mem" label="鍐呭瓨 (MB)" width="120" sortable>
+        <el-table-column prop="mem" label="内存 (MB)" width="120" sortable>
           <template #default="{ row }">
             {{ row.mem.toFixed(1) }} MB
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="鐘舵€? width="100">
+        <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
             <el-tag :type="row.status === 'running' ? 'success' : 'info'" size="small">
-              {{ row.status === 'running' ? '杩愯涓? : row.status }}
+              {{ row.status === 'running' ? '运行中' : row.status }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="鎿嶄綔" width="100" fixed="right">
+        <el-table-column label="操作" width="100" fixed="right">
           <template #default="{ row }">
             <el-button 
               type="danger" 
               size="small"
               @click="killProcess(row)"
             >
-              缁撴潫
+              结束
             </el-button>
           </template>
         </el-table-column>
@@ -99,7 +99,7 @@ const refreshProcesses = async () => {
   try {
     processes.value = await window.electronAPI.getProcesses()
   } catch (error) {
-    ElMessage.error('鑾峰彇杩涚▼鍒楄〃澶辫触: ' + error)
+    ElMessage.error('获取进程列表失败: ' + error)
   } finally {
     loading.value = false
   }
@@ -108,17 +108,17 @@ const refreshProcesses = async () => {
 const killProcess = async (process) => {
   try {
     await ElMessageBox.confirm(
-      `纭畾瑕佺粨鏉熻繘绋?"${process.name}" (PID: ${process.pid}) 鍚楋紵`,
-      '纭',
+      `确定要结束进程 "${process.name}" (PID: ${process.pid}) 吗？`,
+      '确认',
       { type: 'warning' }
     )
     
     await window.electronAPI.killProcess(process.pid)
-    ElMessage.success('杩涚▼宸茬粨鏉?)
+    ElMessage.success('进程已结束')
     refreshProcesses()
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('缁撴潫杩涚▼澶辫触: ' + error)
+      ElMessage.error('结束进程失败: ' + error)
     }
   }
 }

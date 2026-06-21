@@ -1,8 +1,8 @@
 <template>
   <div class="console-container">
     <div class="page-header">
-      <h2>鎺у埗鍙?/h2>
-      <p class="subtitle">鎵ц绯荤粺鍛戒护锛屾煡鐪嬪疄鏃惰緭鍑?/p>
+      <h2>控制台</h2>
+      <p class="subtitle">执行系统命令，查看实时输出</p>
     </div>
     
     <el-card class="console-card" shadow="hover">
@@ -19,7 +19,7 @@
       <div class="input-section">
         <el-input
           v-model="currentCommand"
-          placeholder="杈撳叆鍛戒护锛屾寜 Enter 鎵ц..."
+          placeholder="输入命令，按 Enter 执行..."
           class="command-input"
           @keyup.enter="executeCommand"
           :disabled="running"
@@ -33,16 +33,16 @@
             :disabled="!currentCommand.trim() || running"
             :loading="running"
           >
-            鎵ц
+            执行
           </el-button>
           <el-button 
             type="danger" 
             @click="stopCommand"
             :disabled="!running"
           >
-            缁堟
+            终止
           </el-button>
-          <el-button @click="clearOutput">娓呭睆</el-button>
+          <el-button @click="clearOutput">清屏</el-button>
         </div>
       </div>
     </el-card>
@@ -50,7 +50,7 @@
     <el-card class="quick-commands" shadow="hover">
       <template #header>
         <div class="card-header">
-          <span>甯哥敤鍛戒护</span>
+          <span>常用命令</span>
         </div>
       </template>
       <div class="quick-grid">
@@ -79,14 +79,14 @@ const commandHistory = ref([])
 const historyIndex = ref(-1)
 
 const quickCommands = [
-  { label: 'IP 閰嶇疆', command: 'ipconfig /all', icon: 'Connection' },
-  { label: '绯荤粺淇℃伅', command: 'systeminfo', icon: 'Monitor' },
-  { label: '缃戠粶杩炴帴', command: 'netstat -an', icon: 'DataLine' },
-  { label: '纾佺洏妫€鏌?, command: 'chkdsk', icon: 'Files' },
-  { label: 'DNS 缂撳瓨', command: 'ipconfig /displaydns', icon: 'Search' },
-  { label: '璺敱琛?, command: 'route print', icon: 'Guide' },
-  { label: '涓绘満鍚?, command: 'hostname', icon: 'HomeFilled' },
-  { label: '褰撳墠鐢ㄦ埛', command: 'whoami', icon: 'User' }
+  { label: 'IP 配置', command: 'ipconfig /all', icon: 'Connection' },
+  { label: '系统信息', command: 'systeminfo', icon: 'Monitor' },
+  { label: '网络连接', command: 'netstat -an', icon: 'DataLine' },
+  { label: '磁盘检查', command: 'chkdsk', icon: 'Files' },
+  { label: 'DNS 缓存', command: 'ipconfig /displaydns', icon: 'Search' },
+  { label: '路由表', command: 'route print', icon: 'Guide' },
+  { label: '主机名', command: 'hostname', icon: 'HomeFilled' },
+  { label: '当前用户', command: 'whoami', icon: 'User' }
 ]
 
 const scrollToBottom = () => {
@@ -121,7 +121,7 @@ const executeCommand = async () => {
   try {
     await window.electronAPI.executeCommand(command)
   } catch (error) {
-    addOutput(`閿欒: ${error}`, 'error')
+    addOutput(`错误: ${error}`, 'error')
   } finally {
     running.value = false
   }
@@ -149,11 +149,11 @@ onMounted(() => {
   
   window.electronAPI.onCommandExit((code) => {
     if (code !== 0 && code !== null) {
-      addOutput(`杩涚▼閫€鍑猴紝浠ｇ爜: ${code}`, 'error')
+      addOutput(`进程退出，代码: ${code}`, 'error')
     }
   })
   
-  addOutput('娆㈣繋浣跨敤鎺у埗鍙帮紝杈撳叆鍛戒护寮€濮嬫墽琛屻€?, 'info')
+  addOutput('欢迎使用控制台，输入命令开始执行。', 'info')
   addOutput('', 'info')
 })
 </script>

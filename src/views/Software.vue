@@ -1,8 +1,8 @@
 <template>
   <div class="software-container">
     <div class="page-header">
-      <h2>杞欢鍗歌浇</h2>
-      <p class="subtitle">鏌ョ湅鍜屽嵏杞藉凡瀹夎鐨勮蒋浠?/p>
+      <h2>软件卸载</h2>
+      <p class="subtitle">查看和卸载已安装的软件</p>
     </div>
     
     <el-card class="software-card" shadow="hover">
@@ -11,7 +11,7 @@
           <div class="search-section">
             <el-input
               v-model="searchText"
-              placeholder="鎼滅储杞欢..."
+              placeholder="搜索软件..."
               clearable
               style="width: 300px"
             >
@@ -22,7 +22,7 @@
           </div>
           <el-button type="primary" @click="refreshSoftware">
             <el-icon><Refresh /></el-icon>
-            鍒锋柊
+            刷新
           </el-button>
         </div>
       </template>
@@ -31,19 +31,19 @@
         :data="filteredSoftware" 
         style="width: 100%"
         v-loading="loading"
-        empty-text="鏆傛棤杞欢淇℃伅"
+        empty-text="暂无软件信息"
       >
-        <el-table-column prop="name" label="杞欢鍚嶇О" min-width="250" sortable />
-        <el-table-column prop="version" label="鐗堟湰" width="120" />
-        <el-table-column prop="publisher" label="鍙戝竷鑰? min-width="180" show-overflow-tooltip />
-        <el-table-column label="鎿嶄綔" width="100" fixed="right">
+        <el-table-column prop="name" label="软件名称" min-width="250" sortable />
+        <el-table-column prop="version" label="版本" width="120" />
+        <el-table-column prop="publisher" label="发布者" min-width="180" show-overflow-tooltip />
+        <el-table-column label="操作" width="100" fixed="right">
           <template #default="{ row }">
             <el-button 
               type="danger" 
               size="small"
               @click="uninstall(row)"
             >
-              鍗歌浇
+              卸载
             </el-button>
           </template>
         </el-table-column>
@@ -73,7 +73,7 @@ const refreshSoftware = async () => {
   try {
     software.value = await window.electronAPI.getInstalledSoftware()
   } catch (error) {
-    ElMessage.error('鑾峰彇杞欢鍒楄〃澶辫触: ' + error)
+    ElMessage.error('获取软件列表失败: ' + error)
   } finally {
     loading.value = false
   }
@@ -82,17 +82,17 @@ const refreshSoftware = async () => {
 const uninstall = async (item) => {
   try {
     await ElMessageBox.confirm(
-      `纭畾瑕佸嵏杞?"${item.name}" 鍚楋紵姝ゆ搷浣滀笉鍙挙閿€銆俙,
-      '纭鍗歌浇',
+      `确定要卸载 "${item.name}" 吗？此操作不可撤销。`,
+      '确认卸载',
       { type: 'warning' }
     )
     
     await window.electronAPI.uninstallSoftware(item.id, item.uninstallString)
-    ElMessage.success('鍗歌浇鎸囦护宸插彂閫?)
+    ElMessage.success('卸载指令已发送')
     refreshSoftware()
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('鍗歌浇澶辫触: ' + error)
+      ElMessage.error('卸载失败: ' + error)
     }
   }
 }

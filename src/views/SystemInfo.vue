@@ -1,8 +1,8 @@
 <template>
   <div class="system-info-container">
     <div class="page-header">
-      <h2>绯荤粺淇℃伅</h2>
-      <p class="subtitle">鏌ョ湅 CPU銆佸唴瀛樸€佺鐩樸€佹樉鍗°€佷富鏉跨瓑璇︾粏淇℃伅</p>
+      <h2>系统信息</h2>
+      <p class="subtitle">查看 CPU、内存、磁盘、显卡、主板等详细信息</p>
     </div>
     
     <div class="info-grid">
@@ -20,11 +20,11 @@
             :color="getProgressColor(cpuUsage)"
           />
           <div class="info-details">
-            <p><strong>鍨嬪彿:</strong> {{ systemInfo.cpu?.brand || '鍔犺浇涓?..' }}</p>
-            <p><strong>鍒堕€犲晢:</strong> {{ systemInfo.cpu?.manufacturer || '-' }}</p>
-            <p><strong>鏍稿績/绾跨▼:</strong> {{ systemInfo.cpu?.cores || '-' }} 鏍?/ {{ systemInfo.cpu?.physicalCores || '-' }} 绾跨▼</p>
-            <p><strong>涓婚:</strong> {{ systemInfo.cpu?.speed || '-' }} GHz</p>
-            <p><strong>浣跨敤鐜?</strong> {{ cpuUsage }}%</p>
+            <p><strong>型号:</strong> {{ systemInfo.cpu?.brand || '加载中...' }}</p>
+            <p><strong>制造商:</strong> {{ systemInfo.cpu?.manufacturer || '-' }}</p>
+            <p><strong>核心/线程:</strong> {{ systemInfo.cpu?.cores || '-' }} 核 / {{ systemInfo.cpu?.physicalCores || '-' }} 线程</p>
+            <p><strong>主频:</strong> {{ systemInfo.cpu?.speed || '-' }} GHz</p>
+            <p><strong>使用率:</strong> {{ cpuUsage }}%</p>
           </div>
         </div>
       </el-card>
@@ -33,7 +33,7 @@
         <template #header>
           <div class="card-header">
             <el-icon class="card-icon memory"><Coin /></el-icon>
-            <span>鍐呭瓨</span>
+            <span>内存</span>
           </div>
         </template>
         <div class="card-content">
@@ -43,10 +43,10 @@
             :color="getProgressColor(memoryUsage)"
           />
           <div class="info-details">
-            <p><strong>鎬昏:</strong> {{ formatGB(memoryInfo.total) }}</p>
-            <p><strong>宸茬敤:</strong> {{ formatGB(memoryInfo.used) }}</p>
-            <p><strong>鍙敤:</strong> {{ formatGB(memoryInfo.free) }}</p>
-            <p><strong>浣跨敤鐜?</strong> {{ memoryUsage }}%</p>
+            <p><strong>总计:</strong> {{ formatGB(memoryInfo.total) }}</p>
+            <p><strong>已用:</strong> {{ formatGB(memoryInfo.used) }}</p>
+            <p><strong>可用:</strong> {{ formatGB(memoryInfo.free) }}</p>
+            <p><strong>使用率:</strong> {{ memoryUsage }}%</p>
           </div>
         </div>
       </el-card>
@@ -55,14 +55,14 @@
         <template #header>
           <div class="card-header">
             <el-icon class="card-icon disk"><Files /></el-icon>
-            <span>纾佺洏</span>
+            <span>磁盘</span>
           </div>
         </template>
         <div class="card-content">
           <div v-for="(disk, index) in disks" :key="index" class="disk-item">
             <div class="disk-header">
               <span>{{ disk.fs }}</span>
-              <span>{{ disk.label || '鏈湴纾佺洏' }}</span>
+              <span>{{ disk.label || '本地磁盘' }}</span>
             </div>
             <el-progress 
               :percentage="disk.use" 
@@ -81,20 +81,20 @@
         <template #header>
           <div class="card-header">
             <el-icon class="card-icon gpu"><Monitor /></el-icon>
-            <span>鏄惧崱</span>
+            <span>显卡</span>
           </div>
         </template>
         <div class="card-content">
           <div v-if="gpus.length > 0">
             <div v-for="(gpu, index) in gpus" :key="index" class="gpu-item">
-              <p><strong>鍨嬪彿:</strong> {{ gpu.model || '-' }}</p>
-              <p><strong>鍒堕€犲晢:</strong> {{ gpu.vendor || '-' }}</p>
-              <p><strong>鏄惧瓨:</strong> {{ gpu.vram ? formatVram(gpu.vram) : '-' }}</p>
+              <p><strong>型号:</strong> {{ gpu.model || '-' }}</p>
+              <p><strong>制造商:</strong> {{ gpu.vendor || '-' }}</p>
+              <p><strong>显存:</strong> {{ gpu.vram ? formatVram(gpu.vram) : '-' }}</p>
               <el-divider v-if="index < gpus.length - 1" />
             </div>
           </div>
           <div v-else class="info-details">
-            <p>鏈娴嬪埌鏄惧崱淇℃伅</p>
+            <p>未检测到显卡信息</p>
           </div>
         </div>
       </el-card>
@@ -103,15 +103,15 @@
         <template #header>
           <div class="card-header">
             <el-icon class="card-icon board"><Cpu /></el-icon>
-            <span>涓绘澘</span>
+            <span>主板</span>
           </div>
         </template>
         <div class="card-content">
           <div class="info-details">
-            <p><strong>鍒堕€犲晢:</strong> {{ systemInfo.baseboard?.manufacturer || '-' }}</p>
-            <p><strong>鍨嬪彿:</strong> {{ systemInfo.baseboard?.model || '-' }}</p>
-            <p><strong>鐗堟湰:</strong> {{ systemInfo.baseboard?.version || '-' }}</p>
-            <p><strong>搴忓垪鍙?</strong> {{ systemInfo.baseboard?.serial || '-' }}</p>
+            <p><strong>制造商:</strong> {{ systemInfo.baseboard?.manufacturer || '-' }}</p>
+            <p><strong>型号:</strong> {{ systemInfo.baseboard?.model || '-' }}</p>
+            <p><strong>版本:</strong> {{ systemInfo.baseboard?.version || '-' }}</p>
+            <p><strong>序列号:</strong> {{ systemInfo.baseboard?.serial || '-' }}</p>
           </div>
         </div>
       </el-card>
@@ -120,16 +120,16 @@
         <template #header>
           <div class="card-header">
             <el-icon class="card-icon os"><Monitor /></el-icon>
-            <span>鎿嶄綔绯荤粺</span>
+            <span>操作系统</span>
           </div>
         </template>
         <div class="card-content">
           <div class="info-details">
-            <p><strong>绯荤粺:</strong> {{ systemInfo.os?.distro || '-' }}</p>
-            <p><strong>鐗堟湰:</strong> {{ systemInfo.os?.release || '-' }}</p>
-            <p><strong>鏋舵瀯:</strong> {{ systemInfo.os?.arch || '-' }}</p>
-            <p><strong>涓绘満鍚?</strong> {{ systemInfo.os?.hostname || '-' }}</p>
-            <p><strong>鍐呮牳:</strong> {{ systemInfo.os?.kernel || '-' }}</p>
+            <p><strong>系统:</strong> {{ systemInfo.os?.distro || '-' }}</p>
+            <p><strong>版本:</strong> {{ systemInfo.os?.release || '-' }}</p>
+            <p><strong>架构:</strong> {{ systemInfo.os?.arch || '-' }}</p>
+            <p><strong>主机名:</strong> {{ systemInfo.os?.hostname || '-' }}</p>
+            <p><strong>内核:</strong> {{ systemInfo.os?.kernel || '-' }}</p>
           </div>
         </div>
       </el-card>
@@ -139,20 +139,20 @@
       <template #header>
         <div class="card-header">
           <el-icon class="card-icon network"><Connection /></el-icon>
-          <span>缃戠粶淇℃伅</span>
+          <span>网络信息</span>
         </div>
       </template>
       <div class="network-content">
         <div v-for="(net, index) in networks" :key="index" class="network-item">
           <el-descriptions :column="2" border size="small">
-            <el-descriptions-item label="鍚嶇О">{{ net.iface }}</el-descriptions-item>
-            <el-descriptions-item label="绫诲瀷">{{ net.type || '-' }}</el-descriptions-item>
-            <el-descriptions-item label="IP 鍦板潃">{{ net.ip4 || '-' }}</el-descriptions-item>
-            <el-descriptions-item label="MAC 鍦板潃">{{ net.mac || '-' }}</el-descriptions-item>
-            <el-descriptions-item label="閫熷害">{{ net.speed ? net.speed + ' Mbps' : '-' }}</el-descriptions-item>
-            <el-descriptions-item label="鐘舵€?>
+            <el-descriptions-item label="名称">{{ net.iface }}</el-descriptions-item>
+            <el-descriptions-item label="类型">{{ net.type || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="IP 地址">{{ net.ip4 || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="MAC 地址">{{ net.mac || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="速度">{{ net.speed ? net.speed + ' Mbps' : '-' }}</el-descriptions-item>
+            <el-descriptions-item label="状态">
               <el-tag :type="net.operstate === 'up' ? 'success' : 'info'" size="small">
-                {{ net.operstate === 'up' ? '宸茶繛鎺? : '鏈繛鎺? }}
+                {{ net.operstate === 'up' ? '已连接' : '未连接' }}
               </el-tag>
             </el-descriptions-item>
           </el-descriptions>
@@ -163,7 +163,7 @@
     <div class="refresh-section">
       <el-button type="primary" @click="refreshInfo">
         <el-icon><Refresh /></el-icon>
-        鍒锋柊淇℃伅
+        刷新信息
       </el-button>
     </div>
   </div>
@@ -222,14 +222,14 @@ const refreshInfo = async () => {
       networks.value = info.network.filter(n => !n.iface.includes('Loopback') && n.ip4)
     }
   } catch (error) {
-    console.error('鑾峰彇绯荤粺淇℃伅澶辫触:', error)
+    console.error('获取系统信息失败:', error)
   }
   
   try {
     const usage = await window.electronAPI.getCpuUsage()
     cpuUsage.value = Math.round(usage)
   } catch (error) {
-    console.error('鑾峰彇CPU浣跨敤鐜囧け璐?', error)
+    console.error('获取CPU使用率失败:', error)
   }
   
   try {
@@ -237,7 +237,7 @@ const refreshInfo = async () => {
     memoryInfo.value = mem
     memoryUsage.value = Math.round(parseFloat(mem.usagePercent))
   } catch (error) {
-    console.error('鑾峰彇鍐呭瓨浣跨敤鎯呭喌澶辫触:', error)
+    console.error('获取内存使用情况失败:', error)
   }
 }
 

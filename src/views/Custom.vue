@@ -1,18 +1,18 @@
 <template>
   <div class="custom-container">
     <div class="page-header">
-      <h2>鑷畾涔夐〉闈?/h2>
-      <p class="subtitle">鑷畾涔夊姛鑳藉崱鐗囧竷灞€</p>
+      <h2>自定义页面</h2>
+      <p class="subtitle">自定义功能卡片布局</p>
     </div>
     
     <div class="toolbar">
       <el-button type="primary" @click="addCard">
         <el-icon><Plus /></el-icon>
-        娣诲姞鍗＄墖
+        添加卡片
       </el-button>
       <el-button @click="resetLayout">
         <el-icon><RefreshLeft /></el-icon>
-        閲嶇疆甯冨眬
+        重置布局
       </el-button>
     </div>
     
@@ -27,7 +27,7 @@
           <div class="card-header">
             <el-input 
               v-model="card.title" 
-              placeholder="鍗＄墖鏍囬"
+              placeholder="卡片标题"
               class="title-input"
             />
             <el-button 
@@ -44,37 +44,37 @@
             v-model="card.content"
             type="textarea"
             :rows="4"
-            placeholder="杈撳叆鍐呭..."
+            placeholder="输入内容..."
           />
         </div>
         <div class="card-footer">
           <el-color-picker v-model="card.color" size="small" />
           <el-select v-model="card.size" size="small" style="width: 100px">
-            <el-option label="灏? value="small" />
-            <el-option label="涓? value="medium" />
-            <el-option label="澶? value="large" />
+            <el-option label="小" value="small" />
+            <el-option label="中" value="medium" />
+            <el-option label="大" value="large" />
           </el-select>
         </div>
       </el-card>
     </div>
     
-    <el-dialog v-model="dialogVisible" title="娣诲姞鍗＄墖" width="400px">
+    <el-dialog v-model="dialogVisible" title="添加卡片" width="400px">
       <el-form :model="newCard" label-width="80px">
-        <el-form-item label="鏍囬">
-          <el-input v-model="newCard.title" placeholder="杈撳叆鍗＄墖鏍囬" />
+        <el-form-item label="标题">
+          <el-input v-model="newCard.title" placeholder="输入卡片标题" />
         </el-form-item>
-        <el-form-item label="鍐呭">
+        <el-form-item label="内容">
           <el-input 
             v-model="newCard.content" 
             type="textarea" 
             :rows="3"
-            placeholder="杈撳叆鍗＄墖鍐呭" 
+            placeholder="输入卡片内容" 
           />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">鍙栨秷</el-button>
-        <el-button type="primary" @click="confirmAdd">纭畾</el-button>
+        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="confirmAdd">确定</el-button>
       </template>
     </el-dialog>
   </div>
@@ -88,9 +88,9 @@ const dialogVisible = ref(false)
 const newCard = ref({ title: '', content: '' })
 
 const defaultCards = [
-  { id: 1, title: '甯哥敤鍛戒护', content: 'ping 127.0.0.1\nipconfig /all\nsysteminfo', color: '#409EFF', size: 'medium' },
-  { id: 2, title: '澶囧繕褰?, content: '鍦ㄨ繖閲岃褰曢噸瑕佷俊鎭?..', color: '#67C23A', size: 'medium' },
-  { id: 3, title: '蹇嵎鎿嶄綔', content: '1. 娓呯悊纾佺洏\n2. 妫€鏌ユ洿鏂癨n3. 澶囦唤鏁版嵁', color: '#E6A23C', size: 'medium' }
+  { id: 1, title: '常用命令', content: 'ping 127.0.0.1\nipconfig /all\nsysteminfo', color: '#409EFF', size: 'medium' },
+  { id: 2, title: '备忘录', content: '在这里记录重要信息...', color: '#67C23A', size: 'medium' },
+  { id: 3, title: '快捷操作', content: '1. 清理磁盘\n2. 检查更新\n3. 备份数据', color: '#E6A23C', size: 'medium' }
 ]
 
 const cards = ref([])

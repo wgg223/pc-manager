@@ -1,7 +1,7 @@
 {
   "name": "lao-wang-wei-hu-bao",
   "version": "1.2.0",
-  "description": "鑰佺帇鐨勭淮鎶ゅ疂 - 鐢佃剳瀹氭椂浠诲姟涓庣郴缁熺淮鎶ゅ伐鍏?,
+  "description": "老王维护宝 - 电脑定时任务与系统维护工具",
   "main": "electron/main.js",
   "scripts": {
     "dev": "vite",
@@ -30,7 +30,7 @@
   },
   "build": {
     "appId": "com.laowang.weihubao",
-    "productName": "鑰佺帇鐨勭淮鎶ゅ疂",
+    "productName": "老王维护宝",
     "directories": {
       "output": "build-output"
     },
@@ -48,7 +48,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "鑰佺帇鐨勭淮鎶ゅ疂"
+      "shortcutName": "老王维护宝"
     }
   }
 }

@@ -1,26 +1,26 @@
 <template>
   <div class="wallpaper-container">
     <div class="page-header">
-      <h2>澹佺焊鏇存崲</h2>
-      <p class="subtitle">閫夋嫨鍥剧墖璁剧疆涓烘闈㈠绾?/p>
+      <h2>壁纸更换</h2>
+      <p class="subtitle">选择图片设置为桌面壁纸</p>
     </div>
     
     <el-card class="wallpaper-card" shadow="hover">
       <div class="wallpaper-content">
         <div class="preview-section">
           <div v-if="selectedImage" class="image-preview">
-            <img :src="selectedImage" alt="澹佺焊棰勮" />
+            <img :src="selectedImage" alt="壁纸预览" />
           </div>
           <div v-else class="placeholder">
             <el-icon class="placeholder-icon"><Picture /></el-icon>
-            <p>閫夋嫨鍥剧墖棰勮</p>
+            <p>选择图片预览</p>
           </div>
         </div>
         
         <div class="action-section">
           <el-button type="primary" size="large" @click="selectImage">
             <el-icon><FolderOpened /></el-icon>
-            閫夋嫨鍥剧墖
+            选择图片
           </el-button>
           
           <el-button 
@@ -31,13 +31,13 @@
             @click="applyWallpaper"
           >
             <el-icon><Check /></el-icon>
-            搴旂敤澹佺焊
+            应用壁纸
           </el-button>
         </div>
         
         <div v-if="imagePath" class="image-info">
           <el-descriptions :column="1" border>
-            <el-descriptions-item label="鏂囦欢璺緞">{{ imagePath }}</el-descriptions-item>
+            <el-descriptions-item label="文件路径">{{ imagePath }}</el-descriptions-item>
           </el-descriptions>
         </div>
       </div>
@@ -47,13 +47,13 @@
       <template #header>
         <div class="card-header">
           <el-icon><InfoFilled /></el-icon>
-          <span>浣跨敤鎻愮ず</span>
+          <span>使用提示</span>
         </div>
       </template>
       <ul class="tips-list">
-        <li>鏀寔 JPG銆丳NG銆丅MP銆丟IF 鏍煎紡</li>
-        <li>寤鸿浣跨敤涓庡睆骞曞垎杈ㄧ巼鍖归厤鐨勫浘鐗?/li>
-        <li>澹佺焊璁剧疆鍚庝細鑷姩閫傚簲灞忓箷</li>
+        <li>支持 JPG、PNG、BMP、GIF 格式</li>
+        <li>建议使用与屏幕分辨率匹配的图片</li>
+        <li>壁纸设置后会自动适应屏幕</li>
       </ul>
     </el-card>
   </div>
@@ -75,7 +75,7 @@ const selectImage = async () => {
       selectedImage.value = `file:///${path.replace(/\\/g, '/')}`
     }
   } catch (error) {
-    ElMessage.error('閫夋嫨鍥剧墖澶辫触: ' + error)
+    ElMessage.error('选择图片失败: ' + error)
   }
 }
 
@@ -83,9 +83,9 @@ const applyWallpaper = async () => {
   applying.value = true
   try {
     await window.electronAPI.setWallpaper(imagePath.value)
-    ElMessage.success('澹佺焊璁剧疆鎴愬姛')
+    ElMessage.success('壁纸设置成功')
   } catch (error) {
-    ElMessage.error('璁剧疆澹佺焊澶辫触: ' + error)
+    ElMessage.error('设置壁纸失败: ' + error)
   } finally {
     applying.value = false
   }

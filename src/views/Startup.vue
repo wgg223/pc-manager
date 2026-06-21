@@ -1,17 +1,17 @@
 <template>
   <div class="startup-container">
     <div class="page-header">
-      <h2>鍚姩椤圭鐞?/h2>
-      <p class="subtitle">绠＄悊寮€鏈鸿嚜鍚姩绋嬪簭</p>
+      <h2>启动项管理</h2>
+      <p class="subtitle">管理开机自启动程序</p>
     </div>
     
     <el-card class="startup-card" shadow="hover">
       <template #header>
         <div class="card-header">
-          <span>鍚姩椤瑰垪琛?/span>
+          <span>启动项列表</span>
           <el-button type="primary" @click="refreshStartup">
             <el-icon><Refresh /></el-icon>
-            鍒锋柊
+            刷新
           </el-button>
         </div>
       </template>
@@ -20,19 +20,19 @@
         :data="startupItems" 
         style="width: 100%"
         v-loading="loading"
-        empty-text="鏆傛棤鍚姩椤?
+        empty-text="暂无启动项"
       >
-        <el-table-column prop="name" label="鍚嶇О" min-width="200" />
-        <el-table-column prop="command" label="鍛戒护" min-width="250" show-overflow-tooltip />
-        <el-table-column prop="location" label="浣嶇疆" width="150" />
-        <el-table-column label="鎿嶄綔" width="120">
+        <el-table-column prop="name" label="名称" min-width="200" />
+        <el-table-column prop="command" label="命令" min-width="250" show-overflow-tooltip />
+        <el-table-column prop="location" label="位置" width="150" />
+        <el-table-column label="操作" width="120">
           <template #default="{ row }">
             <el-button 
               type="danger" 
               size="small"
               @click="removeStartup(row)"
             >
-              绉婚櫎
+              移除
             </el-button>
           </template>
         </el-table-column>
@@ -53,7 +53,7 @@ const refreshStartup = async () => {
   try {
     startupItems.value = await window.electronAPI.getStartupItems()
   } catch (error) {
-    ElMessage.error('鑾峰彇鍚姩椤瑰け璐? ' + error)
+    ElMessage.error('获取启动项失败: ' + error)
   } finally {
     loading.value = false
   }
@@ -62,16 +62,16 @@ const refreshStartup = async () => {
 const removeStartup = async (item) => {
   try {
     await ElMessageBox.confirm(
-      `纭畾瑕佺Щ闄ゅ惎鍔ㄩ」 "${item.name}" 鍚楋紵`,
-      '纭',
+      `确定要移除启动项 "${item.name}" 吗？`,
+      '确认',
       { type: 'warning' }
     )
     await window.electronAPI.toggleStartupItem(item.name, false)
-    ElMessage.success('鍚姩椤瑰凡绉婚櫎')
+    ElMessage.success('启动项已移除')
     refreshStartup()
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('鎿嶄綔澶辫触: ' + error)
+      ElMessage.error('操作失败: ' + error)
     }
   }
 }

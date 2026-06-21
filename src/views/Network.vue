@@ -1,8 +1,8 @@
 <template>
   <div class="network-container">
     <div class="page-header">
-      <h2>缃戠粶閲嶇疆</h2>
-      <p class="subtitle">閲嶇疆缃戠粶璁剧疆锛屼慨澶嶇綉缁滆繛鎺ラ棶棰?/p>
+      <h2>网络重置</h2>
+      <p class="subtitle">重置网络设置，修复网络连接问题</p>
     </div>
     
     <div class="network-options">
@@ -10,15 +10,15 @@
         <div class="option-content">
           <el-icon class="option-icon dns"><Connection /></el-icon>
           <div class="option-info">
-            <h3>閲嶇疆 DNS 缂撳瓨</h3>
-            <p>娓呴櫎鏈湴 DNS 瑙ｆ瀽缂撳瓨锛岃В鍐冲煙鍚嶈В鏋愰棶棰?/p>
+            <h3>重置 DNS 缓存</h3>
+            <p>清除本地 DNS 解析缓存，解决域名解析问题</p>
           </div>
           <el-button 
             type="primary" 
             :loading="loading.dns"
             @click="resetDns"
           >
-            鎵ц
+            执行
           </el-button>
         </div>
       </el-card>
@@ -27,15 +27,15 @@
         <div class="option-content">
           <el-icon class="option-icon winsock"><SetUp /></el-icon>
           <div class="option-info">
-            <h3>閲嶇疆 Winsock</h3>
-            <p>閲嶇疆 Windows 濂楁帴瀛楃洰褰曪紝淇缃戠粶杩炴帴寮傚父</p>
+            <h3>重置 Winsock</h3>
+            <p>重置 Windows 套接字目录，修复网络连接异常</p>
           </div>
           <el-button 
             type="warning" 
             :loading="loading.winsock"
             @click="resetWinsock"
           >
-            鎵ц
+            执行
           </el-button>
         </div>
       </el-card>
@@ -44,15 +44,15 @@
         <div class="option-content">
           <el-icon class="option-icon ip"><RefreshRight /></el-icon>
           <div class="option-info">
-            <h3>閲婃斁/鏇存柊 IP 鍦板潃</h3>
-            <p>閲嶆柊鑾峰彇 IP 鍦板潃锛岃В鍐?IP 鍐茬獊闂</p>
+            <h3>释放/更新 IP 地址</h3>
+            <p>重新获取 IP 地址，解决 IP 冲突问题</p>
           </div>
           <el-button 
             type="success" 
             :loading="loading.ip"
             @click="resetIp"
           >
-            鎵ц
+            执行
           </el-button>
         </div>
       </el-card>
@@ -62,11 +62,11 @@
       <template #header>
         <div class="card-header">
           <el-icon><MagicStick /></el-icon>
-          <span>涓€閿綉缁滀慨澶?/span>
+          <span>一键网络修复</span>
         </div>
       </template>
       <div class="one-click-content">
-        <p>鑷姩鎵ц鎵€鏈夌綉缁滈噸缃搷浣滐紝鍏ㄩ潰淇缃戠粶闂</p>
+        <p>自动执行所有网络重置操作，全面修复网络问题</p>
         <el-button 
           type="danger" 
           size="large"
@@ -74,7 +74,8 @@
           @click="resetAll"
         >
           <el-icon><MagicStick /></el-icon>
-          涓€閿慨澶?        </el-button>
+          一键修复
+        </el-button>
       </div>
     </el-card>
   </div>
@@ -95,9 +96,9 @@ const resetDns = async () => {
   loading.value.dns = true
   try {
     await window.electronAPI.resetDns()
-    ElMessage.success('DNS 缂撳瓨宸查噸缃?)
+    ElMessage.success('DNS 缓存已重置')
   } catch (error) {
-    ElMessage.error('閲嶇疆澶辫触: ' + error)
+    ElMessage.error('重置失败: ' + error)
   } finally {
     loading.value.dns = false
   }
@@ -107,9 +108,9 @@ const resetWinsock = async () => {
   loading.value.winsock = true
   try {
     await window.electronAPI.resetWinsock()
-    ElMessage.success('Winsock 宸查噸缃紝鍙兘闇€瑕侀噸鍚數鑴?)
+    ElMessage.success('Winsock 已重置，可能需要重启电脑')
   } catch (error) {
-    ElMessage.error('閲嶇疆澶辫触: ' + error)
+    ElMessage.error('重置失败: ' + error)
   } finally {
     loading.value.winsock = false
   }
@@ -119,9 +120,9 @@ const resetIp = async () => {
   loading.value.ip = true
   try {
     await window.electronAPI.resetIp()
-    ElMessage.success('IP 鍦板潃宸叉洿鏂?)
+    ElMessage.success('IP 地址已更新')
   } catch (error) {
-    ElMessage.error('閲嶇疆澶辫触: ' + error)
+    ElMessage.error('重置失败: ' + error)
   } finally {
     loading.value.ip = false
   }
@@ -133,9 +134,9 @@ const resetAll = async () => {
     await resetDns()
     await resetWinsock()
     await resetIp()
-    ElMessage.success('缃戠粶淇瀹屾垚')
+    ElMessage.success('网络修复完成')
   } catch (error) {
-    ElMessage.error('淇杩囩▼涓嚭鐜伴敊璇?)
+    ElMessage.error('修复过程中出现错误')
   } finally {
     loading.value.all = false
   }

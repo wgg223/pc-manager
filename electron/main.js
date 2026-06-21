@@ -20,7 +20,7 @@ function createWindow() {
     }
   })
 
-  // 濮嬬粓鍔犺浇鎵撳寘鍚庣殑鏂囦欢
+  // 始终加载打包后的文件
   mainWindow.loadFile(path.join(__dirname, '../dist/index.html'))
   
   if (process.env.NODE_ENV === 'development') {
@@ -42,7 +42,7 @@ app.on('activate', () => {
   }
 })
 
-// 绐楀彛鎺у埗
+// 窗口控制
 ipcMain.on('window-minimize', () => {
   mainWindow.minimize()
 })
@@ -59,7 +59,7 @@ ipcMain.on('window-close', () => {
   mainWindow.close()
 })
 
-// 鐢垫簮绠＄悊
+// 电源管理
 ipcMain.handle('power-shutdown', async (event, delaySeconds) => {
   return new Promise((resolve, reject) => {
     const cmd = `shutdown /s /t ${delaySeconds}`
@@ -98,7 +98,7 @@ ipcMain.handle('power-cancel', async () => {
   })
 })
 
-// 绯荤粺淇℃伅
+// 系统信息
 ipcMain.handle('get-system-info', async () => {
   const si = require('systeminformation')
   const [cpu, mem, os, disk, network, gpu, baseboard] = await Promise.all([
@@ -130,7 +130,7 @@ ipcMain.handle('get-memory-usage', async () => {
   }
 })
 
-// 杩涚▼绠＄悊
+// 进程管理
 ipcMain.handle('get-processes', async () => {
   const si = require('systeminformation')
   const processes = await si.processes()
@@ -153,7 +153,7 @@ ipcMain.handle('kill-process', async (event, pid) => {
   })
 })
 
-// 纾佺洏娓呯悊
+// 磁盘清理
 ipcMain.handle('clean-temp-files', async () => {
   const tempPaths = [
     process.env.TEMP,
@@ -200,7 +200,8 @@ ipcMain.handle('empty-recycle-bin', async () => {
   })
 })
 
-// 鍚姩椤圭鐞?ipcMain.handle('get-startup-items', async () => {
+// 启动项管理
+ipcMain.handle('get-startup-items', async () => {
   return new Promise((resolve, reject) => {
     const cmd = 'powershell -Command "Get-CimInstance Win32_StartupCommand | Select-Object Name, Command, Location | ConvertTo-Json"'
     exec(cmd, { maxBuffer: 1024 * 1024 * 10 }, (error, stdout) => {
@@ -239,7 +240,7 @@ ipcMain.handle('toggle-startup-item', async (event, name, enabled) => {
   })
 })
 
-// 缃戠粶閲嶇疆
+// 网络重置
 ipcMain.handle('reset-dns', async () => {
   return new Promise((resolve, reject) => {
     exec('ipconfig /flushdns', (error) => {
@@ -267,7 +268,7 @@ ipcMain.handle('reset-ip', async () => {
   })
 })
 
-// 杞欢鍗歌浇
+// 软件卸载
 ipcMain.handle('get-installed-software', async () => {
   return new Promise((resolve, reject) => {
     const cmd = 'powershell -Command "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-ItemProperty HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*, HKLM:\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\* -ErrorAction SilentlyContinue | Select-Object DisplayName, DisplayVersion, Publisher, UninstallString | ConvertTo-Json"'
@@ -309,7 +310,7 @@ ipcMain.handle('uninstall-software', async (event, id, uninstallString) => {
   })
 })
 
-// 澹佺焊璁剧疆
+// 壁纸设置
 ipcMain.handle('set-wallpaper', async (event, filePath) => {
   return new Promise((resolve, reject) => {
     const cmd = `powershell -Command "Add-Type -TypeDefinition 'using System.Runtime.InteropServices; public class Wallpaper { [DllImport(\"user32.dll\", CharSet=CharSet.Auto)] public static extern int SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni); }'; [Wallpaper]::SystemParametersInfo(0x0014, 0, '${filePath.replace(/\\/g, '\\\\')}', 0x01)"`
@@ -330,7 +331,7 @@ ipcMain.handle('select-image', async () => {
   return result.canceled ? null : result.filePaths[0]
 })
 
-// 鏂囦欢閫夋嫨
+// 文件选择
 ipcMain.handle('select-folder', async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
     properties: ['openDirectory']
@@ -338,7 +339,7 @@ ipcMain.handle('select-folder', async () => {
   return result.canceled ? null : result.filePaths[0]
 })
 
-// 鎺у埗鍙?- 鎵ц鍛戒护
+// 控制台 - 执行命令
 const { spawn } = require('child_process')
 let currentProcess = null
 
@@ -390,7 +391,7 @@ ipcMain.on('kill-command', () => {
   }
 })
 
-// 鎵撳紑澶栭儴閾炬帴
+// 打开外部链接
 ipcMain.handle('open-external', async (event, url) => {
   await shell.openExternal(url)
   return true

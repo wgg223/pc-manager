@@ -1,8 +1,8 @@
 <template>
   <div class="disk-clean-container">
     <div class="page-header">
-      <h2>纾佺洏娓呯悊</h2>
-      <p class="subtitle">娓呯悊涓存椂鏂囦欢鍜岀郴缁熺紦瀛橈紝閲婃斁纾佺洏绌洪棿</p>
+      <h2>磁盘清理</h2>
+      <p class="subtitle">清理临时文件和系统缓存，释放磁盘空间</p>
     </div>
     
     <div class="clean-options">
@@ -10,8 +10,8 @@
         <div class="option-content">
           <el-icon class="option-icon temp"><FolderDelete /></el-icon>
           <div class="option-info">
-            <h3>涓存椂鏂囦欢</h3>
-            <p>娓呯悊绯荤粺鍜屽簲鐢ㄧ▼搴忎复鏃舵枃浠?/p>
+            <h3>临时文件</h3>
+            <p>清理系统和应用程序临时文件</p>
           </div>
           <el-switch v-model="cleanOptions.temp" />
         </div>
@@ -21,8 +21,8 @@
         <div class="option-content">
           <el-icon class="option-icon cache"><Delete /></el-icon>
           <div class="option-info">
-            <h3>绯荤粺缂撳瓨</h3>
-            <p>娓呯悊 Windows 鏇存柊缂撳瓨鍜岀郴缁熸棩蹇?/p>
+            <h3>系统缓存</h3>
+            <p>清理 Windows 更新缓存和系统日志</p>
           </div>
           <el-switch v-model="cleanOptions.cache" />
         </div>
@@ -32,8 +32,8 @@
         <div class="option-content">
           <el-icon class="option-icon recycle"><DeleteFilled /></el-icon>
           <div class="option-info">
-            <h3>鍥炴敹绔?/h3>
-            <p>娓呯┖鍥炴敹绔欎腑鐨勬墍鏈夋枃浠?/p>
+            <h3>回收站</h3>
+            <p>清空回收站中的所有文件</p>
           </div>
           <el-switch v-model="cleanOptions.recycle" />
         </div>
@@ -48,19 +48,20 @@
         @click="startClean"
       >
         <el-icon><Delete /></el-icon>
-        寮€濮嬫竻鐞?      </el-button>
+        开始清理
+      </el-button>
     </div>
     
     <el-card v-if="cleanResult" class="result-card" shadow="hover">
       <template #header>
         <div class="card-header">
-          <span>娓呯悊缁撴灉</span>
+          <span>清理结果</span>
         </div>
       </template>
       
       <div class="result-content">
         <div class="result-item">
-          <span class="result-label">宸叉竻鐞嗙┖闂?</span>
+          <span class="result-label">已清理空间</span>
           <span class="result-value">{{ formatSize(cleanResult.totalCleaned) }}</span>
         </div>
         
@@ -73,7 +74,7 @@
           </el-icon>
           <span>{{ item.path }}</span>
           <el-tag :type="item.status === 'success' ? 'success' : 'danger'" size="small">
-            {{ item.status === 'success' ? '鎴愬姛' : '澶辫触' }}
+            {{ item.status === 'success' ? '成功' : '失败' }}
           </el-tag>
         </div>
       </div>
@@ -119,16 +120,16 @@ const startClean = async () => {
     if (cleanOptions.value.recycle) {
       try {
         await window.electronAPI.emptyRecycleBin()
-        results.push({ path: '鍥炴敹绔?, status: 'success' })
+        results.push({ path: '回收站', status: 'success' })
       } catch (e) {
-        results.push({ path: '鍥炴敹绔?, status: 'error', message: e })
+        results.push({ path: '回收站', status: 'error', message: e })
       }
     }
     
     cleanResult.value = { totalCleaned, results }
-    ElMessage.success('娓呯悊瀹屾垚')
+    ElMessage.success('清理完成')
   } catch (error) {
-    ElMessage.error('娓呯悊澶辫触: ' + error)
+    ElMessage.error('清理失败: ' + error)
   } finally {
     cleaning.value = false
   }
