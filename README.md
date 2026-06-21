@@ -59,4 +59,10 @@ pc-manager/
 
 ## 开源协议
 
-MIT License
+本项目采用 [MIT License](LICENSE) 开源协议。
+
+你可以在 [LICENSE](LICENSE) 文件中查看完整的许可证文本。
+
+版权声明：Copyright (c) 2026 wgg223
+
+简要说明：在遵守许可证要求的前提下，你可以自由使用、复制、修改和分发本项目。
