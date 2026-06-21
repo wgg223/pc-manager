@@ -32,7 +32,7 @@
     "appId": "com.laowang.weihubao",
     "productName": "鑰佺帇鐨勭淮鎶ゅ疂",
     "directories": {
-      "output": "release"
+      "output": "build-output"
     },
     "files": [
       "dist/**/*",
@@ -40,8 +40,15 @@
       "package.json"
     ],
     "win": {
-      "target": "portable",
+      "target": "nsis",
       "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "鑰佺帇鐨勭淮鎶ゅ疂"
     }
   }
 }
