@@ -1,6 +1,6 @@
 {
   "name": "lao-wang-wei-hu-bao",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "鑰佺帇鐨勭淮鎶ゅ疂 - 鐢佃剳瀹氭椂浠诲姟涓庣郴缁熺淮鎶ゅ伐鍏?,
   "main": "electron/main.js",
   "scripts": {
