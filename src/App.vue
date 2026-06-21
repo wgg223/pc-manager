@@ -173,12 +173,17 @@ const checkAgreement = () => {
     nextTick(() => {
       const dialogBody = document.querySelector('.el-dialog__body')
       if (dialogBody) {
-        dialogBody.addEventListener('scroll', () => {
-          const { scrollTop, scrollHeight, clientHeight } = dialogBody
-          if (scrollTop + clientHeight >= scrollHeight - 10) {
-            scrolledToBottom.value = true
-          }
-        })
+        const { scrollHeight, clientHeight } = dialogBody
+        if (scrollHeight <= clientHeight + 5) {
+          scrolledToBottom.value = true
+        } else {
+          dialogBody.addEventListener('scroll', () => {
+            const { scrollTop, scrollHeight: sh, clientHeight: ch } = dialogBody
+            if (scrollTop + ch >= sh - 10) {
+              scrolledToBottom.value = true
+            }
+          })
+        }
       }
     })
   }
