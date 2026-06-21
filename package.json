@@ -1,0 +1,47 @@
+{
+  "name": "lao-wang-wei-hu-bao",
+  "version": "1.0.0",
+  "description": "鑰佺帇鐨勭淮鎶ゅ疂 - 鐢佃剳瀹氭椂浠诲姟涓庣郴缁熺淮鎶ゅ伐鍏?,
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "electron:dev": "concurrently \"vite\" \"wait-on http://localhost:5173 && electron .\"",
+    "electron:build": "vite build && electron-builder",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.1.0",
+    "element-plus": "^2.3.14",
+    "systeminformation": "^5.21.0",
+    "vue": "^3.3.4",
+    "vue-router": "^4.2.4"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^4.3.4",
+    "concurrently": "^8.2.1",
+    "electron": "^27.3.11",
+    "electron-builder": "^24.6.4",
+    "vite": "^4.4.9",
+    "wait-on": "^7.0.1"
+  },
+  "config": {
+    "electron_mirror": "https://npmmirror.com/mirrors/electron/"
+  },
+  "build": {
+    "appId": "com.laowang.weihubao",
+    "productName": "鑰佺帇鐨勭淮鎶ゅ疂",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "portable",
+      "signAndEditExecutable": false
+    }
+  }
+}
