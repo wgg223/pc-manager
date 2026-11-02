@@ -2,7 +2,7 @@
   <div class="app-container">
     <div class="title-bar">
       <div class="title-bar-drag">
-        <el-icon class="title-icon"><Monitor /></el-icon>
+        <img src="/app-icon.jpg" class="title-icon" alt="icon" />
         <span class="title-text">老王的维护宝</span>
       </div>
       <div class="title-bar-controls">
@@ -21,7 +21,7 @@
     <div class="main-layout">
       <el-aside width="220px" class="sidebar">
         <div class="logo-section">
-          <el-icon class="logo-icon"><Cpu /></el-icon>
+          <img src="/app-icon.jpg" class="logo-icon" alt="logo" />
           <span class="logo-text">老王的维护宝</span>
         </div>
 
@@ -142,7 +142,7 @@
     >
       <div class="agreement-text">
         <h3>老王的维护宝 - 用户协议</h3>
-        <p class="update-date">更新日期：2025年1月1日</p>
+        <p class="update-date">更新日期：2026年11月2日</p>
 
         <h4>一、协议说明</h4>
         <p>欢迎使用「老王的维护宝」（以下简称"本软件"）。本软件是一款电脑系统维护工具，提供定时任务、磁盘清理、系统信息查看、进程管理等功能。在使用本软件之前，请您仔细阅读本协议的全部内容。</p>
@@ -171,9 +171,11 @@
 
         <h4>三、使用须知</h4>
         <p>1. 本软件的部分功能涉及系统级操作（如关机、重启、进程管理等），请在使用前确认操作内容，避免误操作导致数据丢失。</p>
-        <p>2. 使用磁盘清理功能时，被清理的文件将无法恢复，请谨慎操作。</p>
+        <p>2. 使用磁盘清理和垃圾清理功能时，被清理的文件将无法恢复，请谨慎操作。</p>
         <p>3. 使用进程管理功能结束系统关键进程可能导致系统不稳定，请确认后再操作。</p>
         <p>4. 使用控制台功能执行的命令由用户自行负责，本软件不对命令执行结果承担责任。</p>
+        <p>5. 使用 SSH 远程、远程桌面和文件传输功能时，请确保您有权访问目标计算机，并遵守相关网络安全规定。</p>
+        <p>6. 远程连接配置信息（如密码、私钥）仅存储在用户本地设备上，本软件不会上传或传输到任何服务器。</p>
 
         <h4>四、免费声明</h4>
         <p>1. 本软件按"现状"提供，不作任何明示或暗示的保证。</p>
@@ -184,7 +186,9 @@
         <p>本软件为开源软件，遵循开源协议发布。用户可以在遵守开源协议的前提下自由使用、修改和分发本软件。</p>
 
         <h4>六、隐私保护</h4>
-        <p>本软件不会收集、存储或上传用户的任何个人信息。所有数据均存储在用户本地设备上。</p>
+        <p>1. 本软件不会收集、存储或上传用户的任何个人信息。所有数据均存储在用户本地设备上。</p>
+        <p>2. 远程连接配置（包括主机地址、用户名、密码、私钥等）仅保存在用户本地，不会传输到任何第三方服务器。</p>
+        <p>3. 自动更新功能会连接 GitHub 服务器检查版本信息，但不会上传任何用户数据。</p>
 
         <h4>七、协议修改</h4>
         <p>开发者有权随时修改本协议，修改后的协议将在软件中公布。继续使用本软件即表示您同意修改后的协议。</p>
@@ -284,8 +288,9 @@ body {
 }
 
 .title-icon {
-  color: white;
-  font-size: 18px;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
 }
 
 .title-text {
@@ -342,8 +347,10 @@ body {
 }
 
 .logo-icon {
-  font-size: 28px;
-  color: #409EFF;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  flex-shrink: 0;
 }
 
 .logo-text {

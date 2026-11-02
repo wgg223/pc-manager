@@ -1140,12 +1140,12 @@ function scanDirectory(dirPath, patterns, maxDepth, currentDepth, results, level
             try {
               const stat = fs.statSync(fullPath)
               results.push({
-                path: fullPath,
-                name: entry.name,
-                size: stat.size,
-                modified: stat.mtimeMs,
-                level,
-                category
+                path: String(fullPath),
+                name: String(entry.name),
+                size: Number(stat.size) || 0,
+                modified: Number(stat.mtimeMs) || 0,
+                level: Number(level) || 1,
+                category: String(category)
               })
             } catch (e) {}
           }
@@ -1173,12 +1173,12 @@ function scanFixedPaths(drive, results) {
           const stat = fs.statSync(fullPath)
           if (stat.isFile()) {
             results.push({
-              path: fullPath,
-              name: entry.name,
-              size: stat.size,
-              modified: stat.mtimeMs,
-              level: td.level,
-              category: td.category
+              path: String(fullPath),
+              name: String(entry.name),
+              size: Number(stat.size) || 0,
+              modified: Number(stat.mtimeMs) || 0,
+              level: Number(td.level) || 1,
+              category: String(td.category)
             })
           } else if (stat.isDirectory()) {
             const subEntries = fs.readdirSync(fullPath, { withFileTypes: true })
@@ -1188,12 +1188,12 @@ function scanFixedPaths(drive, results) {
                 const subStat = fs.statSync(subPath)
                 if (subStat.isFile()) {
                   results.push({
-                    path: subPath,
-                    name: sub.name,
-                    size: subStat.size,
-                    modified: subStat.mtimeMs,
-                    level: td.level,
-                    category: td.category
+                    path: String(subPath),
+                    name: String(sub.name),
+                    size: Number(subStat.size) || 0,
+                    modified: Number(subStat.mtimeMs) || 0,
+                    level: Number(td.level) || 1,
+                    category: String(td.category)
                   })
                 }
               } catch (e) {}
@@ -1247,10 +1247,10 @@ function scanFixedPaths(drive, results) {
           const stat = fs.statSync(fullPath)
           if (stat.isFile() && thumbCachePatterns.some(p => entry.toLowerCase().startsWith(p))) {
             results.push({
-              path: fullPath,
-              name: entry,
-              size: stat.size,
-              modified: stat.mtimeMs,
+              path: String(fullPath),
+              name: String(entry),
+              size: Number(stat.size) || 0,
+              modified: Number(stat.mtimeMs) || 0,
               level: 3,
               category: '缩略图缓存'
             })
@@ -1294,13 +1294,20 @@ ipcMain.handle('scan-junk-files', async (event, options) => {
   for (const r of results) {
     if (!seen.has(r.path)) {
       seen.add(r.path)
-      uniqueResults.push(r)
+      uniqueResults.push({
+        path: String(r.path),
+        name: String(r.name),
+        size: Number(r.size) || 0,
+        modified: Number(r.modified) || 0,
+        level: Number(r.level) || 1,
+        category: String(r.category)
+      })
     }
   }
 
   const summary = {
-    total: uniqueResults.length,
-    totalSize: uniqueResults.reduce((sum, f) => sum + f.size, 0),
+    total: Number(uniqueResults.length),
+    totalSize: Number(uniqueResults.reduce((sum, f) => sum + f.size, 0)),
     byLevel: { 1: { count: 0, size: 0 }, 2: { count: 0, size: 0 }, 3: { count: 0, size: 0 } },
     byCategory: {}
   }
@@ -1311,13 +1318,31 @@ ipcMain.handle('scan-junk-files', async (event, options) => {
       summary.byLevel[f.level].size += f.size
     }
     if (!summary.byCategory[f.category]) {
-      summary.byCategory[f.category] = { count: 0, size: 0, level: f.level }
+      summary.byCategory[f.category] = { count: 0, size: 0, level: Number(f.level) }
     }
     summary.byCategory[f.category].count++
     summary.byCategory[f.category].size += f.size
   }
 
-  return { files: uniqueResults, summary, drives }
+  return {
+    files: uniqueResults,
+    summary: {
+      total: summary.total,
+      totalSize: summary.totalSize,
+      byLevel: {
+        1: { count: summary.byLevel[1].count, size: summary.byLevel[1].size },
+        2: { count: summary.byLevel[2].count, size: summary.byLevel[2].size },
+        3: { count: summary.byLevel[3].count, size: summary.byLevel[3].size }
+      },
+      byCategory: Object.fromEntries(
+        Object.entries(summary.byCategory).map(([k, v]) => [
+          String(k),
+          { count: Number(v.count), size: Number(v.size), level: Number(v.level) }
+        ])
+      )
+    },
+    drives: drives.map(d => String(d))
+  }
 })
 
 ipcMain.handle('clean-junk-files', async (event, filePaths) => {
