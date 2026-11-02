@@ -1262,86 +1262,85 @@ function scanFixedPaths(drive, results) {
 }
 
 ipcMain.handle('scan-junk-files', async (event, options) => {
-  const drives = getAvailableDrives()
-  const results = []
-  const scanDrives = (options && options.drives && options.drives.length > 0) ? options.drives : drives
+  try {
+    const drives = getAvailableDrives()
+    const results = []
+    const scanDrives = (options && options.drives && options.drives.length > 0) ? options.drives : drives
 
-  for (const drive of scanDrives) {
-    scanFixedPaths(drive, results)
+    for (const drive of scanDrives) {
+      scanFixedPaths(drive, results)
 
-    const junkPatterns = {
-      1: { patterns: ['*.tmp', '*.temp', '*.bak', '*.old', '*.log', '*.dmp', 'thumbs.db', 'desktop.ini', '~$'], category: '临时文件', depth: 4 },
-      2: { patterns: ['*.cache', '*.chk', '*.gid', '*.err', '*.old'], category: '系统垃圾', depth: 3 },
-      3: { patterns: ['*.msi', '*.exe', '*.zip', '*.rar', '*.7z'], category: '安装包残留', depth: 2 }
-    }
+      const junkPatterns = {
+        1: { patterns: ['*.tmp', '*.temp', '*.bak', '*.old', '*.log', '*.dmp', 'thumbs.db', 'desktop.ini', '~$'], category: '临时文件', depth: 4 },
+        2: { patterns: ['*.cache', '*.chk', '*.gid', '*.err', '*.old'], category: '系统垃圾', depth: 3 },
+        3: { patterns: ['*.msi', '*.exe', '*.zip', '*.rar', '*.7z'], category: '安装包残留', depth: 2 }
+      }
 
-    for (const [level, config] of Object.entries(junkPatterns)) {
-      const searchDirs = [
-        drive + '\\Users',
-        process.env.TEMP || (drive + '\\Users\\Default\\AppData\\Local\\Temp')
-      ]
-      for (const dir of searchDirs) {
-        try {
-          if (!fs.existsSync(dir)) continue
-          scanDirectory(dir, config.patterns, config.depth, 0, results, parseInt(level), config.category)
-        } catch (e) {}
+      for (const [level, config] of Object.entries(junkPatterns)) {
+        const searchDirs = [
+          drive + '\\Users',
+          process.env.TEMP || (drive + '\\Users\\Default\\AppData\\Local\\Temp')
+        ]
+        for (const dir of searchDirs) {
+          try {
+            if (!fs.existsSync(dir)) continue
+            scanDirectory(dir, config.patterns, config.depth, 0, results, parseInt(level), config.category)
+          } catch (e) {}
+        }
       }
     }
-  }
 
-  const uniqueResults = []
-  const seen = new Set()
-  for (const r of results) {
-    if (!seen.has(r.path)) {
-      seen.add(r.path)
-      uniqueResults.push({
-        path: String(r.path),
-        name: String(r.name),
-        size: Number(r.size) || 0,
-        modified: Number(r.modified) || 0,
-        level: Number(r.level) || 1,
-        category: String(r.category)
-      })
+    const uniqueResults = []
+    const seen = new Set()
+    for (const r of results) {
+      if (!seen.has(r.path)) {
+        seen.add(r.path)
+        uniqueResults.push({
+          path: String(r.path),
+          name: String(r.name),
+          size: Number(r.size) || 0,
+          modified: Number(r.modified) || 0,
+          level: Number(r.level) || 1,
+          category: String(r.category)
+        })
+      }
     }
-  }
 
-  const summary = {
-    total: Number(uniqueResults.length),
-    totalSize: Number(uniqueResults.reduce((sum, f) => sum + f.size, 0)),
-    byLevel: { 1: { count: 0, size: 0 }, 2: { count: 0, size: 0 }, 3: { count: 0, size: 0 } },
-    byCategory: {}
-  }
+    const byLevel = { 1: { count: 0, size: 0 }, 2: { count: 0, size: 0 }, 3: { count: 0, size: 0 } }
+    const byCategory = {}
 
-  for (const f of uniqueResults) {
-    if (summary.byLevel[f.level]) {
-      summary.byLevel[f.level].count++
-      summary.byLevel[f.level].size += f.size
+    for (const f of uniqueResults) {
+      const lvl = Number(f.level) || 1
+      if (byLevel[lvl]) {
+        byLevel[lvl].count++
+        byLevel[lvl].size += Number(f.size) || 0
+      }
+      const cat = String(f.category)
+      if (!byCategory[cat]) {
+        byCategory[cat] = { count: 0, size: 0, level: lvl }
+      }
+      byCategory[cat].count++
+      byCategory[cat].size += Number(f.size) || 0
     }
-    if (!summary.byCategory[f.category]) {
-      summary.byCategory[f.category] = { count: 0, size: 0, level: Number(f.level) }
-    }
-    summary.byCategory[f.category].count++
-    summary.byCategory[f.category].size += f.size
-  }
 
-  return {
-    files: uniqueResults,
-    summary: {
-      total: summary.total,
-      totalSize: summary.totalSize,
-      byLevel: {
-        1: { count: summary.byLevel[1].count, size: summary.byLevel[1].size },
-        2: { count: summary.byLevel[2].count, size: summary.byLevel[2].size },
-        3: { count: summary.byLevel[3].count, size: summary.byLevel[3].size }
+    const result = {
+      files: uniqueResults,
+      summary: {
+        total: Number(uniqueResults.length),
+        totalSize: Number(uniqueResults.reduce((sum, f) => sum + (Number(f.size) || 0), 0)),
+        byLevel: {
+          1: { count: Number(byLevel[1].count), size: Number(byLevel[1].size) },
+          2: { count: Number(byLevel[2].count), size: Number(byLevel[2].size) },
+          3: { count: Number(byLevel[3].count), size: Number(byLevel[3].size) }
+        },
+        byCategory: byCategory
       },
-      byCategory: Object.fromEntries(
-        Object.entries(summary.byCategory).map(([k, v]) => [
-          String(k),
-          { count: Number(v.count), size: Number(v.size), level: Number(v.level) }
-        ])
-      )
-    },
-    drives: drives.map(d => String(d))
+      drives: drives.map(d => String(d))
+    }
+
+    return JSON.parse(JSON.stringify(result))
+  } catch (e) {
+    throw new Error('扫描失败: ' + e.message)
   }
 })
 
@@ -1355,13 +1354,13 @@ ipcMain.handle('clean-junk-files', async (event, filePaths) => {
       const stat = fs.statSync(filePath)
       fs.unlinkSync(filePath)
       cleaned++
-      totalSize += stat.size
+      totalSize += Number(stat.size) || 0
     } catch (e) {
-      errors.push({ path: filePath, error: e.message })
+      errors.push({ path: String(filePath), error: String(e.message || e) })
     }
   }
 
-  return { cleaned, totalSize, errors }
+  return JSON.parse(JSON.stringify({ cleaned: Number(cleaned), totalSize: Number(totalSize), errors }))
 })
 
 ipcMain.handle('get-available-drives', async () => {

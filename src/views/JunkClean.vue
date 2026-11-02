@@ -321,7 +321,7 @@ const startScan = async () => {
   }, 500)
 
   try {
-    const result = await window.electronAPI.scanJunkFiles({ drives: selectedDrives.value })
+    const result = await window.electronAPI.scanJunkFiles({ drives: [...selectedDrives.value] })
     scanResult.value = result
     scanProgress.value = 100
     ElMessage.success(`扫描完成，发现 ${result.summary.total} 个垃圾文件，共 ${formatSize(result.summary.totalSize)}`)
