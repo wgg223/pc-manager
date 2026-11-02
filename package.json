@@ -48,8 +48,7 @@
     },
     "win": {
       "target": "nsis",
-      "signAndEditExecutable": false,
-      "icon": "build/icon.jpg"
+      "signAndEditExecutable": false
     },
     "nsis": {
       "oneClick": false,
