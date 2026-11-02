@@ -231,11 +231,15 @@ const addTask = (type, time) => {
 }
 
 const removeTask = (index) => {
+  const task = tasks.value[index]
   tasks.value.splice(index, 1)
+  ElMessage.success(`已删除${getTypeName(task.type)}任务`)
 }
 
 const toggleTask = (index) => {
-  tasks.value[index].active = !tasks.value[index].active
+  const task = tasks.value[index]
+  task.active = !task.active
+  ElMessage.success(task.active ? `已启用${getTypeName(task.type)}任务` : `已暂停${getTypeName(task.type)}任务`)
 }
 
 const cancelAllTasks = async () => {
@@ -244,11 +248,15 @@ const cancelAllTasks = async () => {
       type: 'warning'
     })
     
-    await window.electronAPI.cancelPowerAction()
-    tasks.value = []
-    ElMessage.success('所有任务已取消')
+    try {
+      await window.electronAPI.cancelPowerAction()
+      tasks.value = []
+      ElMessage.success('所有任务已取消')
+    } catch (error) {
+      ElMessage.error('取消任务失败: ' + error)
+    }
   } catch {
-    // User cancelled
+    // User cancelled the confirm dialog
   }
 }
 

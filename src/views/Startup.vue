@@ -62,17 +62,23 @@ const refreshStartup = async () => {
 const removeStartup = async (item) => {
   try {
     await ElMessageBox.confirm(
-      `确定要移除启动项 "${item.name}" 吗？`,
-      '确认',
-      { type: 'warning' }
+      `确定要移除启动项 "${item.name}" 吗？移除后该程序将不再随系统启动。`,
+      '确认移除',
+      { 
+        type: 'warning',
+        confirmButtonText: '确定移除',
+        cancelButtonText: '取消'
+      }
     )
-    await window.electronAPI.toggleStartupItem(item.name, false)
-    ElMessage.success('启动项已移除')
-    refreshStartup()
-  } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error('操作失败: ' + error)
+    try {
+      await window.electronAPI.toggleStartupItem(item.name, false)
+      ElMessage.success(`启动项 "${item.name}" 已移除`)
+      refreshStartup()
+    } catch (error) {
+      ElMessage.error(`移除启动项 "${item.name}" 失败: ${error}`)
     }
+  } catch {
+    // User cancelled the confirm dialog
   }
 }
 

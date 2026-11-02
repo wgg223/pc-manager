@@ -109,17 +109,23 @@ const killProcess = async (process) => {
   try {
     await ElMessageBox.confirm(
       `确定要结束进程 "${process.name}" (PID: ${process.pid}) 吗？`,
-      '确认',
-      { type: 'warning' }
+      '确认结束进程',
+      { 
+        type: 'warning',
+        confirmButtonText: '确定结束',
+        cancelButtonText: '取消'
+      }
     )
     
-    await window.electronAPI.killProcess(process.pid)
-    ElMessage.success('进程已结束')
-    refreshProcesses()
-  } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error('结束进程失败: ' + error)
+    try {
+      await window.electronAPI.killProcess(process.pid)
+      ElMessage.success(`进程 "${process.name}" 已结束`)
+      refreshProcesses()
+    } catch (error) {
+      ElMessage.error(`结束进程 "${process.name}" 失败: ${error}`)
     }
+  } catch {
+    // User cancelled the confirm dialog
   }
 }
 

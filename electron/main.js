@@ -64,7 +64,7 @@ ipcMain.handle('power-shutdown', async (event, delaySeconds) => {
   return new Promise((resolve, reject) => {
     const cmd = `shutdown /s /t ${delaySeconds}`
     exec(cmd, (error) => {
-      if (error) reject(error.message)
+      if (error) reject('关机命令执行失败: ' + error.message)
       else resolve(true)
     })
   })
@@ -74,7 +74,7 @@ ipcMain.handle('power-restart', async (event, delaySeconds) => {
   return new Promise((resolve, reject) => {
     const cmd = `shutdown /r /t ${delaySeconds}`
     exec(cmd, (error) => {
-      if (error) reject(error.message)
+      if (error) reject('重启的命令执行失败: ' + error.message)
       else resolve(true)
     })
   })
@@ -83,7 +83,7 @@ ipcMain.handle('power-restart', async (event, delaySeconds) => {
 ipcMain.handle('power-hibernate', async () => {
   return new Promise((resolve, reject) => {
     exec('shutdown /h', (error) => {
-      if (error) reject(error.message)
+      if (error) reject('休眠命令执行失败: ' + error.message)
       else resolve(true)
     })
   })
@@ -92,7 +92,7 @@ ipcMain.handle('power-hibernate', async () => {
 ipcMain.handle('power-cancel', async () => {
   return new Promise((resolve, reject) => {
     exec('shutdown /a', (error) => {
-      if (error) reject(error.message)
+      if (error) reject('取消电源操作失败: ' + error.message)
       else resolve(true)
     })
   })
@@ -147,7 +147,7 @@ ipcMain.handle('get-processes', async () => {
 ipcMain.handle('kill-process', async (event, pid) => {
   return new Promise((resolve, reject) => {
     exec(`taskkill /F /PID ${pid}`, (error) => {
-      if (error) reject(error.message)
+      if (error) reject('无法结束该进程，可能权限不足或进程已退出: ' + error.message)
       else resolve(true)
     })
   })
@@ -194,7 +194,7 @@ ipcMain.handle('clean-temp-files', async () => {
 ipcMain.handle('empty-recycle-bin', async () => {
   return new Promise((resolve, reject) => {
     exec('rd /s /q C:\\$Recycle.Bin', (error) => {
-      if (error) reject(error.message)
+      if (error) reject('清空回收站失败，可能需要管理员权限: ' + error.message)
       else resolve(true)
     })
   })
@@ -206,7 +206,7 @@ ipcMain.handle('get-startup-items', async () => {
     const cmd = 'powershell -Command "Get-CimInstance Win32_StartupCommand | Select-Object Name, Command, Location | ConvertTo-Json"'
     exec(cmd, { maxBuffer: 1024 * 1024 * 10 }, (error, stdout) => {
       if (error) {
-        reject(error.message)
+        reject('获取启动项列表失败: ' + error.message)
       } else {
         try {
           let items = JSON.parse(stdout)
@@ -220,7 +220,7 @@ ipcMain.handle('get-startup-items', async () => {
           }))
           resolve(items)
         } catch (e) {
-          reject(e.message)
+          reject('解析启动项数据失败: ' + e.message)
         }
       }
     })
@@ -230,13 +230,23 @@ ipcMain.handle('get-startup-items', async () => {
 ipcMain.handle('toggle-startup-item', async (event, name, enabled) => {
   return new Promise((resolve, reject) => {
     const regKey = 'HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run'
-    const cmd = enabled
-      ? `reg add "${regKey}" /v "${name}" /t REG_SZ /d "" /f`
-      : `reg delete "${regKey}" /v "${name}" /f`
-    exec(cmd, (error) => {
-      if (error) reject(error.message)
-      else resolve(true)
-    })
+    if (enabled) {
+      exec(`reg add "${regKey}" /v "${name}" /t REG_SZ /d "" /f`, (error) => {
+        if (error) reject('启用启动项失败: ' + error.message)
+        else resolve(true)
+      })
+    } else {
+      exec(`reg query "${regKey}" /v "${name}"`, (queryError) => {
+        if (queryError) {
+          resolve(true)
+          return
+        }
+        exec(`reg delete "${regKey}" /v "${name}" /f`, (error) => {
+          if (error) reject('移除启动项失败，可能需要管理员权限: ' + error.message)
+          else resolve(true)
+        })
+      })
+    }
   })
 })
 
@@ -246,7 +256,7 @@ ipcMain.handle('reset-dns', async () => {
     const psScript = `Start-Process -FilePath 'ipconfig' -ArgumentList '/flushdns' -Verb RunAs -Wait`
     const encoded = Buffer.from(psScript, 'utf16le').toString('base64')
     execFile('powershell.exe', ['-ExecutionPolicy', 'Bypass', '-EncodedCommand', encoded], (error) => {
-      if (error) reject(error.message)
+      if (error) reject('DNS 缓存重置失败: ' + error.message)
       else resolve(true)
     })
   })
@@ -257,7 +267,7 @@ ipcMain.handle('reset-winsock', async () => {
     const psScript = `Start-Process -FilePath 'netsh' -ArgumentList 'winsock reset' -Verb RunAs -Wait`
     const encoded = Buffer.from(psScript, 'utf16le').toString('base64')
     execFile('powershell.exe', ['-ExecutionPolicy', 'Bypass', '-EncodedCommand', encoded], (error) => {
-      if (error) reject(error.message)
+      if (error) reject('Winsock 重置失败: ' + error.message)
       else resolve(true)
     })
   })
@@ -268,7 +278,7 @@ ipcMain.handle('reset-ip', async () => {
     const psScript = `Start-Process -FilePath 'cmd' -ArgumentList '/c ipconfig /release & ipconfig /renew' -Verb RunAs -Wait`
     const encoded = Buffer.from(psScript, 'utf16le').toString('base64')
     execFile('powershell.exe', ['-ExecutionPolicy', 'Bypass', '-EncodedCommand', encoded], (error) => {
-      if (error) reject(error.message)
+      if (error) reject('IP 地址重置失败: ' + error.message)
       else resolve(true)
     })
   })
@@ -280,7 +290,7 @@ ipcMain.handle('get-installed-software', async () => {
     const cmd = 'powershell -Command "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-ItemProperty HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*, HKLM:\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\* -ErrorAction SilentlyContinue | Select-Object DisplayName, DisplayVersion, Publisher, UninstallString | ConvertTo-Json"'
     exec(cmd, { maxBuffer: 1024 * 1024 * 10, encoding: 'utf8' }, (error, stdout) => {
       if (error) {
-        reject(error.message)
+        reject('获取已安装软件列表失败: ' + error.message)
       } else {
         try {
           let software = JSON.parse(stdout)
@@ -296,7 +306,7 @@ ipcMain.handle('get-installed-software', async () => {
             }))
           resolve(software)
         } catch (e) {
-          reject(e.message)
+          reject('解析软件列表数据失败: ' + e.message)
         }
       }
     })
@@ -307,11 +317,11 @@ ipcMain.handle('uninstall-software', async (event, id, uninstallString) => {
   return new Promise((resolve, reject) => {
     if (uninstallString) {
       exec(uninstallString, (error) => {
-        if (error) reject(error.message)
+        if (error) reject('卸载程序启动失败: ' + error.message)
         else resolve(true)
       })
     } else {
-      reject('No uninstall string found')
+      reject('未找到该软件的卸载程序')
     }
   })
 })
@@ -329,7 +339,7 @@ public class Wallpaper {
 [Wallpaper]::SystemParametersInfo(0x0014, 0, '${filePath.replace(/'/g, "''")}', 0x01)`
     const encoded = Buffer.from(psScript, 'utf16le').toString('base64')
     execFile('powershell.exe', ['-ExecutionPolicy', 'Bypass', '-EncodedCommand', encoded], (error) => {
-      if (error) reject(error.message)
+      if (error) reject('设置壁纸失败: ' + error.message)
       else resolve(true)
     })
   })
@@ -393,7 +403,7 @@ ipcMain.handle('execute-command', async (event, command) => {
 
     child.on('error', (err) => {
       currentProcess = null
-      reject(err.message)
+      reject('命令执行失败: ' + err.message)
     })
   })
 })
@@ -409,4 +419,680 @@ ipcMain.on('kill-command', () => {
 ipcMain.handle('open-external', async (event, url) => {
   await shell.openExternal(url)
   return true
+})
+
+// 自动更新
+let autoUpdater = null
+
+function setupAutoUpdater() {
+  try {
+    autoUpdater = require('electron-updater').autoUpdater
+  } catch (e) {
+    console.log('自动更新模块加载失败（开发模式下正常）:', e.message)
+    return
+  }
+
+  autoUpdater.autoDownload = false
+  autoUpdater.autoInstallOnAppQuit = true
+
+  autoUpdater.on('checking-for-update', () => {
+    mainWindow && mainWindow.webContents.send('update-status', { type: 'checking' })
+  })
+
+  autoUpdater.on('update-available', (info) => {
+    mainWindow && mainWindow.webContents.send('update-status', {
+      type: 'available',
+      version: info.version,
+      releaseDate: info.releaseDate,
+      releaseNotes: info.releaseNotes
+    })
+  })
+
+  autoUpdater.on('update-not-available', (info) => {
+    mainWindow && mainWindow.webContents.send('update-status', {
+      type: 'latest',
+      version: info.version
+    })
+  })
+
+  autoUpdater.on('download-progress', (progress) => {
+    mainWindow && mainWindow.webContents.send('update-status', {
+      type: 'downloading',
+      percent: Number(progress.percent.toFixed(1)),
+      transferred: progress.transferred,
+      total: progress.total,
+      speed: progress.bytesPerSecond
+    })
+  })
+
+  autoUpdater.on('update-downloaded', () => {
+    mainWindow && mainWindow.webContents.send('update-status', { type: 'downloaded' })
+  })
+
+  autoUpdater.on('error', (err) => {
+    mainWindow && mainWindow.webContents.send('update-status', {
+      type: 'error',
+      message: err.message || '更新过程中发生未知错误'
+    })
+  })
+}
+
+ipcMain.handle('check-for-update', async () => {
+  if (!autoUpdater) {
+    setupAutoUpdater()
+  }
+  if (!autoUpdater) {
+    return { success: false, message: '自动更新功能不可用（仅在打包后生效）' }
+  }
+  try {
+    await autoUpdater.checkForUpdates()
+    return { success: true }
+  } catch (error) {
+    return { success: false, message: '检查更新失败: ' + error.message }
+  }
+})
+
+ipcMain.handle('download-update', async () => {
+  if (!autoUpdater) {
+    return { success: false, message: '自动更新功能不可用' }
+  }
+  try {
+    await autoUpdater.downloadUpdate()
+    return { success: true }
+  } catch (error) {
+    return { success: false, message: '下载更新失败: ' + error.message }
+  }
+})
+
+ipcMain.handle('install-update', async () => {
+  if (!autoUpdater) {
+    return { success: false, message: '自动更新功能不可用' }
+  }
+  autoUpdater.quitAndInstall(false, true)
+  return { success: true }
+})
+
+ipcMain.handle('get-app-version', async () => {
+  return app.getVersion()
+})
+
+// Hosts 文件管理
+ipcMain.handle('read-hosts', async () => {
+  const hostsPath = 'C:\\Windows\\System32\\drivers\\etc\\hosts'
+  try {
+    const content = fs.readFileSync(hostsPath, 'utf-8')
+    return { success: true, content }
+  } catch (error) {
+    return { success: false, message: '读取 Hosts 文件失败: ' + error.message }
+  }
+})
+
+ipcMain.handle('save-hosts', async (event, content) => {
+  const hostsPath = 'C:\\Windows\\System32\\drivers\\etc\\hosts'
+  return new Promise((resolve) => {
+    const tempPath = path.join(app.getPath('temp'), 'hosts_tmp')
+    fs.writeFileSync(tempPath, content, 'utf-8')
+    const psScript = `Start-Process cmd -ArgumentList '/c copy /y "${tempPath}" "${hostsPath}"' -Verb RunAs -Wait`
+    const encoded = Buffer.from(psScript, 'utf16le').toString('base64')
+    execFile('powershell.exe', ['-ExecutionPolicy', 'Bypass', '-EncodedCommand', encoded], (error) => {
+      try { fs.unlinkSync(tempPath) } catch {}
+      if (error) {
+        resolve({ success: false, message: '保存 Hosts 文件失败，可能需要管理员权限: ' + error.message })
+      } else {
+        resolve({ success: true })
+      }
+    })
+  })
+})
+
+// 系统修复 (SFC / DISM)
+ipcMain.handle('run-sfc', async () => {
+  return new Promise((resolve, reject) => {
+    const psScript = `Start-Process -FilePath 'sfc.exe' -ArgumentList '/scannow' -Verb RunAs -Wait`
+    const encoded = Buffer.from(psScript, 'utf16le').toString('base64')
+    execFile('powershell.exe', ['-ExecutionPolicy', 'Bypass', '-EncodedCommand', encoded], (error) => {
+      if (error) reject('系统文件检查启动失败: ' + error.message)
+      else resolve(true)
+    })
+  })
+})
+
+ipcMain.handle('run-dism', async () => {
+  return new Promise((resolve, reject) => {
+    const psScript = `Start-Process -FilePath 'DISM.exe' -ArgumentList '/Online /Cleanup-Image /RestoreHealth' -Verb RunAs -Wait`
+    const encoded = Buffer.from(psScript, 'utf16le').toString('base64')
+    execFile('powershell.exe', ['-ExecutionPolicy', 'Bypass', '-EncodedCommand', encoded], (error) => {
+      if (error) reject('DISM 修复启动失败: ' + error.message)
+      else resolve(true)
+    })
+  })
+})
+
+// 系统服务管理
+ipcMain.handle('get-services', async () => {
+  return new Promise((resolve, reject) => {
+    const cmd = 'powershell -Command "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-Service | Select-Object Name, DisplayName, Status, StartType | ConvertTo-Json"'
+    exec(cmd, { maxBuffer: 1024 * 1024 * 10, encoding: 'utf8' }, (error, stdout) => {
+      if (error) {
+        reject('获取服务列表失败: ' + error.message)
+      } else {
+        try {
+          let services = JSON.parse(stdout)
+          if (!Array.isArray(services)) services = [services]
+          const statusMap = { Running: 'running', Stopped: 'stopped', Paused: 'paused' }
+          services = services.map((s, i) => ({
+            id: i.toString(),
+            name: s.Name || '',
+            displayName: s.DisplayName || s.Name || '',
+            status: statusMap[s.Status] || s.Status || 'unknown',
+            startType: s.StartType || ''
+          })).sort((a, b) => a.displayName.localeCompare(b.displayName, 'zh'))
+          resolve(services)
+        } catch (e) {
+          reject('解析服务数据失败: ' + e.message)
+        }
+      }
+    })
+  })
+})
+
+ipcMain.handle('control-service', async (event, serviceName, action) => {
+  return new Promise((resolve, reject) => {
+    let cmd
+    if (action === 'start') {
+      cmd = `Start-Service '${serviceName}'`
+    } else if (action === 'stop') {
+      cmd = `Stop-Service '${serviceName}' -Force`
+    } else if (action === 'restart') {
+      cmd = `Restart-Service '${serviceName}' -Force`
+    } else {
+      reject('未知的服务操作: ' + action)
+      return
+    }
+    const psScript = `Start-Process powershell -ArgumentList '-Command', '${cmd}' -Verb RunAs -Wait`
+    const encoded = Buffer.from(psScript, 'utf16le').toString('base64')
+    execFile('powershell.exe', ['-ExecutionPolicy', 'Bypass', '-EncodedCommand', encoded], (error) => {
+      if (error) reject(`服务${action === 'start' ? '启动' : action === 'stop' ? '停止' : '重启'}失败: ` + error.message)
+      else resolve(true)
+    })
+  })
+})
+
+// 硬盘健康信息
+ipcMain.handle('get-disk-health', async () => {
+  return new Promise((resolve, reject) => {
+    const cmd = 'powershell -Command "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-PhysicalDisk | Select-Object DeviceId, FriendlyName, MediaType, Size, HealthStatus, OperationalStatus | ConvertTo-Json"'
+    exec(cmd, { maxBuffer: 1024 * 1024 * 5, encoding: 'utf8' }, (error, stdout) => {
+      if (error) {
+        reject('获取硬盘信息失败: ' + error.message)
+      } else {
+        try {
+          let disks = JSON.parse(stdout)
+          if (!Array.isArray(disks)) disks = [disks]
+          disks = disks.map(d => ({
+            deviceId: d.DeviceId || '',
+            name: d.FriendlyName || '未知硬盘',
+            type: d.MediaType || '未知',
+            size: d.Size ? (d.Size / 1024 / 1024 / 1024).toFixed(1) + ' GB' : '-',
+            health: d.HealthStatus || '未知',
+            status: d.OperationalStatus || '未知'
+          }))
+          resolve(disks)
+        } catch (e) {
+          reject('解析硬盘数据失败: ' + e.message)
+        }
+      }
+    })
+  })
+})
+
+// 电池信息
+ipcMain.handle('get-battery-info', async () => {
+  return new Promise((resolve, reject) => {
+    const cmd = 'powershell -Command "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-WmiObject Win32_Battery | Select-Object Status, EstimatedChargeRemaining, BatteryStatus, DesignVoltage, ExpectedLife | ConvertTo-Json"'
+    exec(cmd, { maxBuffer: 1024 * 1024 * 5, encoding: 'utf8' }, (error, stdout) => {
+      if (error) {
+        resolve(null)
+        return
+      }
+      try {
+        if (!stdout || stdout.trim() === '') {
+          resolve(null)
+          return
+        }
+        const battery = JSON.parse(stdout)
+        const statusMap = {
+          '1': '正在放电', '2': '交流供电', '3': '已充满',
+          '4': '充电中', '5': '电量低', '6': '未充电',
+          '7': '电量高', '8': '未知', '9': '充电中(高)',
+          '10': '充电中(低)', '11': '充电警告'
+        }
+        resolve({
+          status: battery.Status || '未知',
+          percent: battery.EstimatedChargeRemaining || 0,
+          chargeStatus: statusMap[String(battery.BatteryStatus)] || '未知',
+          designVoltage: battery.DesignVoltage ? battery.DesignVoltage + ' mV' : '-'
+        })
+      } catch {
+        resolve(null)
+      }
+    })
+  })
+})
+
+// SSH 远程连接
+const { Client } = require('ssh2')
+const sshConnections = new Map()
+let sshIdCounter = 0
+
+const sshConnectionsFile = path.join(app.getPath('userData'), 'ssh-connections.json')
+
+function loadSavedConnections() {
+  try {
+    if (fs.existsSync(sshConnectionsFile)) {
+      return JSON.parse(fs.readFileSync(sshConnectionsFile, 'utf8'))
+    }
+  } catch (e) {}
+  return []
+}
+
+function saveConnections(connections) {
+  try {
+    fs.writeFileSync(sshConnectionsFile, JSON.stringify(connections, null, 2), 'utf8')
+  } catch (e) {}
+}
+
+ipcMain.handle('ssh-connect', async (event, config) => {
+  return new Promise((resolve, reject) => {
+    const conn = new Client()
+    const id = String(++sshIdCounter)
+
+    conn.on('ready', () => {
+      sshConnections.set(id, { conn, config })
+      resolve({ id, name: config.name || `${config.username}@${config.host}` })
+    })
+
+    conn.on('error', (err) => {
+      reject('SSH 连接失败: ' + err.message)
+    })
+
+    conn.on('close', () => {
+      sshConnections.delete(id)
+      mainWindow.webContents.send('ssh-closed', id)
+    })
+
+    const connectConfig = {
+      host: config.host,
+      port: config.port || 22,
+      username: config.username,
+      readyTimeout: 15000,
+      keepaliveInterval: 10000,
+      keepaliveCountMax: 3
+    }
+
+    if (config.authType === 'key' && config.privateKey) {
+      connectConfig.privateKey = config.privateKey
+      if (config.passphrase) connectConfig.passphrase = config.passphrase
+    } else {
+      connectConfig.password = config.password
+    }
+
+    conn.connect(connectConfig)
+  })
+})
+
+ipcMain.handle('ssh-execute', async (event, id, command) => {
+  return new Promise((resolve, reject) => {
+    const connInfo = sshConnections.get(id)
+    if (!connInfo) {
+      reject('SSH 连接不存在或已断开')
+      return
+    }
+
+    connInfo.conn.exec(command, (err, stream) => {
+      if (err) {
+        reject('命令执行失败: ' + err.message)
+        return
+      }
+
+      let stdout = ''
+      let stderr = ''
+
+      stream.on('close', (code) => {
+        mainWindow.webContents.send('ssh-output', id, { type: 'exit', code })
+        resolve({ stdout, stderr, code })
+      })
+
+      stream.on('data', (data) => {
+        const text = data.toString()
+        stdout += text
+        mainWindow.webContents.send('ssh-output', id, { type: 'stdout', data: text })
+      })
+
+      stream.stderr.on('data', (data) => {
+        const text = data.toString()
+        stderr += text
+        mainWindow.webContents.send('ssh-output', id, { type: 'stderr', data: text })
+      })
+    })
+  })
+})
+
+ipcMain.handle('ssh-disconnect', async (event, id) => {
+  const connInfo = sshConnections.get(id)
+  if (connInfo) {
+    connInfo.conn.end()
+    sshConnections.delete(id)
+  }
+  return true
+})
+
+ipcMain.handle('ssh-disconnect-all', async () => {
+  for (const [, connInfo] of sshConnections) {
+    connInfo.conn.end()
+  }
+  sshConnections.clear()
+  return true
+})
+
+ipcMain.handle('ssh-get-connections', async () => {
+  return loadSavedConnections()
+})
+
+ipcMain.handle('ssh-save-connection', async (event, config) => {
+  const connections = loadSavedConnections()
+  const existing = connections.findIndex(c => c.id === config.id)
+  const entry = {
+    id: config.id || String(Date.now()),
+    name: config.name || `${config.username}@${config.host}`,
+    host: config.host,
+    port: config.port || 22,
+    username: config.username,
+    authType: config.authType || 'password',
+    password: config.password || '',
+    privateKey: config.privateKey || '',
+    passphrase: config.passphrase || ''
+  }
+  if (existing >= 0) {
+    connections[existing] = entry
+  } else {
+    connections.push(entry)
+  }
+  saveConnections(connections)
+  return entry
+})
+
+ipcMain.handle('ssh-delete-connection', async (event, id) => {
+  const connections = loadSavedConnections()
+  const filtered = connections.filter(c => c.id !== id)
+  saveConnections(filtered)
+  const connInfo = sshConnections.get(id)
+  if (connInfo) {
+    connInfo.conn.end()
+    sshConnections.delete(id)
+  }
+  return true
+})
+
+ipcMain.handle('ssh-get-active', async () => {
+  const active = []
+  for (const [id, connInfo] of sshConnections) {
+    active.push({ id, name: connInfo.config.name || `${connInfo.config.username}@${connInfo.config.host}` })
+  }
+  return active
+})
+
+// 远程桌面 (RDP)
+const rdpConnectionsFile = path.join(app.getPath('userData'), 'rdp-connections.json')
+
+function loadRdpConnections() {
+  try {
+    if (fs.existsSync(rdpConnectionsFile)) {
+      return JSON.parse(fs.readFileSync(rdpConnectionsFile, 'utf8'))
+    }
+  } catch (e) {}
+  return []
+}
+
+function saveRdpConnections(connections) {
+  try {
+    fs.writeFileSync(rdpConnectionsFile, JSON.stringify(connections, null, 2), 'utf8')
+  } catch (e) {}
+}
+
+ipcMain.handle('rdp-get-connections', async () => {
+  return loadRdpConnections()
+})
+
+ipcMain.handle('rdp-save-connection', async (event, config) => {
+  const connections = loadRdpConnections()
+  const existing = connections.findIndex(c => c.id === config.id)
+  const entry = {
+    id: config.id || String(Date.now()),
+    name: config.name || config.host,
+    host: config.host,
+    port: config.port || 3389,
+    username: config.username || '',
+    fullscreen: config.fullscreen !== false,
+    resolution: config.resolution || 'default',
+    adminMode: config.adminMode || false
+  }
+  if (existing >= 0) {
+    connections[existing] = entry
+  } else {
+    connections.push(entry)
+  }
+  saveRdpConnections(connections)
+  return entry
+})
+
+ipcMain.handle('rdp-delete-connection', async (event, id) => {
+  const connections = loadRdpConnections()
+  saveRdpConnections(connections.filter(c => c.id !== id))
+  return true
+})
+
+ipcMain.handle('rdp-connect', async (event, config) => {
+  return new Promise((resolve, reject) => {
+    const args = [`/v:${config.host}:${config.port || 3389}`]
+    if (config.fullscreen !== false) args.push('/f')
+    if (config.adminMode) args.push('/admin')
+    if (config.resolution && config.resolution !== 'default') {
+      const parts = config.resolution.split('x')
+      if (parts.length === 2) {
+        args.push(`/w:${parts[0]}`)
+        args.push(`/h:${parts[1]}`)
+      }
+    }
+
+    const rdpContent = [
+      `full address:s:${config.host}:${config.port || 3389}`,
+      `username:s:${config.username || ''}`,
+      `screen mode id:i:${config.fullscreen !== false ? '2' : '1'}`,
+      `administrative session:i:${config.adminMode ? '1' : '0'}`
+    ]
+
+    if (config.resolution && config.resolution !== 'default') {
+      const parts = config.resolution.split('x')
+      if (parts.length === 2) {
+        rdpContent.push(`desktopwidth:i:${parts[0]}`)
+        rdpContent.push(`desktopheight:i:${parts[1]}`)
+      }
+    }
+
+    const tempRdp = path.join(app.getPath('temp'), `rdp-${Date.now()}.rdp`)
+    fs.writeFileSync(tempRdp, rdpContent.join('\r\n'), 'utf8')
+
+    execFile('mstsc.exe', [tempRdp], (error) => {
+      try { fs.unlinkSync(tempRdp) } catch (e) {}
+      if (error) reject('启动远程桌面失败: ' + error.message)
+      else resolve(true)
+    })
+  })
+})
+
+// SFTP 远程文件传输
+const { SFTPClient } = require('ssh2')
+const sftpSessions = new Map()
+let sftpIdCounter = 0
+
+ipcMain.handle('sftp-connect', async (event, config) => {
+  return new Promise((resolve, reject) => {
+    const conn = new (require('ssh2').Client)()
+    const id = String(++sftpIdCounter)
+
+    conn.on('ready', () => {
+      conn.sftp((err, sftp) => {
+        if (err) {
+          conn.end()
+          reject('SFTP 初始化失败: ' + err.message)
+          return
+        }
+        sftpSessions.set(id, { conn, sftp, config })
+        resolve({ id, name: config.name || `${config.username}@${config.host}` })
+      })
+    })
+
+    conn.on('error', (err) => {
+      reject('SFTP 连接失败: ' + err.message)
+    })
+
+    const connectConfig = {
+      host: config.host,
+      port: config.port || 22,
+      username: config.username,
+      readyTimeout: 15000
+    }
+
+    if (config.authType === 'key' && config.privateKey) {
+      connectConfig.privateKey = config.privateKey
+      if (config.passphrase) connectConfig.passphrase = config.passphrase
+    } else {
+      connectConfig.password = config.password
+    }
+
+    conn.connect(connectConfig)
+  })
+})
+
+ipcMain.handle('sftp-list', async (event, id, remotePath) => {
+  return new Promise((resolve, reject) => {
+    const session = sftpSessions.get(id)
+    if (!session) { reject('SFTP 连接不存在或已断开'); return }
+
+    session.sftp.readdir(remotePath || '/', (err, list) => {
+      if (err) { reject('读取目录失败: ' + err.message); return }
+      resolve(list.map(item => ({
+        name: item.filename,
+        longname: item.longname,
+        isDirectory: item.attrs.isDirectory(),
+        isFile: item.attrs.isFile(),
+        size: item.attrs.size,
+        modifyTime: item.attrs.mtime * 1000,
+        permissions: '0' + (item.attrs.mode & 0o777).toString(8)
+      })).sort((a, b) => {
+        if (a.isDirectory && !b.isDirectory) return -1
+        if (!a.isDirectory && b.isDirectory) return 1
+        return a.name.localeCompare(b.name)
+      }))
+    })
+  })
+})
+
+ipcMain.handle('sftp-download', async (event, id, remotePath, localPath) => {
+  return new Promise((resolve, reject) => {
+    const session = sftpSessions.get(id)
+    if (!session) { reject('SFTP 连接不存在或已断开'); return }
+
+    session.sftp.fastGet(remotePath, localPath, (err) => {
+      if (err) reject('下载文件失败: ' + err.message)
+      else resolve(true)
+    })
+  })
+})
+
+ipcMain.handle('sftp-upload', async (event, id, localPath, remotePath) => {
+  return new Promise((resolve, reject) => {
+    const session = sftpSessions.get(id)
+    if (!session) { reject('SFTP 连接不存在或已断开'); return }
+
+    session.sftp.fastPut(localPath, remotePath, (err) => {
+      if (err) reject('上传文件失败: ' + err.message)
+      else resolve(true)
+    })
+  })
+})
+
+ipcMain.handle('sftp-delete', async (event, id, remotePath, isDirectory) => {
+  return new Promise((resolve, reject) => {
+    const session = sftpSessions.get(id)
+    if (!session) { reject('SFTP 连接不存在或已断开'); return }
+
+    if (isDirectory) {
+      session.sftp.rmdir(remotePath, (err) => {
+        if (err) reject('删除目录失败: ' + err.message)
+        else resolve(true)
+      })
+    } else {
+      session.sftp.unlink(remotePath, (err) => {
+        if (err) reject('删除文件失败: ' + err.message)
+        else resolve(true)
+      })
+    }
+  })
+})
+
+ipcMain.handle('sftp-mkdir', async (event, id, remotePath) => {
+  return new Promise((resolve, reject) => {
+    const session = sftpSessions.get(id)
+    if (!session) { reject('SFTP 连接不存在或已断开'); return }
+
+    session.sftp.mkdir(remotePath, (err) => {
+      if (err) reject('创建目录失败: ' + err.message)
+      else resolve(true)
+    })
+  })
+})
+
+ipcMain.handle('sftp-disconnect', async (event, id) => {
+  const session = sftpSessions.get(id)
+  if (session) {
+    session.conn.end()
+    sftpSessions.delete(id)
+  }
+  return true
+})
+
+ipcMain.handle('sftp-stat', async (event, id, remotePath) => {
+  return new Promise((resolve, reject) => {
+    const session = sftpSessions.get(id)
+    if (!session) { reject('SFTP 连接不存在或已断开'); return }
+
+    session.sftp.stat(remotePath, (err, stats) => {
+      if (err) reject('获取文件信息失败: ' + err.message)
+      else resolve({
+        size: stats.size,
+        isDirectory: stats.isDirectory(),
+        isFile: stats.isFile(),
+        modifyTime: stats.mtime * 1000,
+        permissions: '0' + (stats.mode & 0o777).toString(8)
+      })
+    })
+  })
+})
+
+ipcMain.handle('sftp-get-homedir', async (event, id) => {
+  return new Promise((resolve, reject) => {
+    const session = sftpSessions.get(id)
+    if (!session) { reject('SFTP 连接不存在或已断开'); return }
+
+    session.conn.exec('echo $HOME', (err, stream) => {
+      if (err) { resolve('/'); return }
+      let output = ''
+      stream.on('data', (data) => { output += data.toString() })
+      stream.on('close', () => {
+        resolve(output.trim() || '/')
+      })
+    })
+  })
 })

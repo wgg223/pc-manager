@@ -83,6 +83,7 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { Delete } from '@element-plus/icons-vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const dialogVisible = ref(false)
 const newCard = ref({ title: '', content: '' })
@@ -101,7 +102,8 @@ const addCard = () => {
 }
 
 const confirmAdd = () => {
-  if (!newCard.value.title) {
+  if (!newCard.value.title || !newCard.value.title.trim()) {
+    ElMessage.warning('请输入卡片标题')
     return
   }
   
@@ -115,16 +117,46 @@ const confirmAdd = () => {
   
   dialogVisible.value = false
   saveCards()
+  ElMessage.success('卡片已添加')
 }
 
-const removeCard = (index) => {
-  cards.value.splice(index, 1)
-  saveCards()
+const removeCard = async (index) => {
+  const card = cards.value[index]
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除卡片 "${card.title}" 吗？`,
+      '确认删除',
+      {
+        type: 'warning',
+        confirmButtonText: '确定删除',
+        cancelButtonText: '取消'
+      }
+    )
+    cards.value.splice(index, 1)
+    saveCards()
+    ElMessage.success('卡片已删除')
+  } catch {
+    // User cancelled
+  }
 }
 
-const resetLayout = () => {
-  cards.value = [...defaultCards]
-  saveCards()
+const resetLayout = async () => {
+  try {
+    await ElMessageBox.confirm(
+      '重置布局将恢复默认卡片，当前自定义内容将丢失。确定要重置吗？',
+      '确认重置',
+      {
+        type: 'warning',
+        confirmButtonText: '确定重置',
+        cancelButtonText: '取消'
+      }
+    )
+    cards.value = [...defaultCards]
+    saveCards()
+    ElMessage.success('布局已重置')
+  } catch {
+    // User cancelled
+  }
 }
 
 const saveCards = () => {

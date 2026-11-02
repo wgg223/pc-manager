@@ -83,7 +83,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const loading = ref({
   dns: false,
@@ -98,7 +98,7 @@ const resetDns = async () => {
     await window.electronAPI.resetDns()
     ElMessage.success('DNS 缓存已重置')
   } catch (error) {
-    ElMessage.error('重置失败: ' + error)
+    ElMessage.error('DNS 重置失败: ' + error)
   } finally {
     loading.value.dns = false
   }
@@ -108,9 +108,9 @@ const resetWinsock = async () => {
   loading.value.winsock = true
   try {
     await window.electronAPI.resetWinsock()
-    ElMessage.success('Winsock 已重置，可能需要重启电脑')
+    ElMessage.success('Winsock 已重置，可能需要重启电脑才能生效')
   } catch (error) {
-    ElMessage.error('重置失败: ' + error)
+    ElMessage.error('Winsock 重置失败: ' + error)
   } finally {
     loading.value.winsock = false
   }
@@ -122,21 +122,51 @@ const resetIp = async () => {
     await window.electronAPI.resetIp()
     ElMessage.success('IP 地址已更新')
   } catch (error) {
-    ElMessage.error('重置失败: ' + error)
+    ElMessage.error('IP 重置失败: ' + error)
   } finally {
     loading.value.ip = false
   }
 }
 
 const resetAll = async () => {
-  loading.value.all = true
   try {
-    await resetDns()
-    await resetWinsock()
-    await resetIp()
-    ElMessage.success('网络修复完成')
-  } catch (error) {
-    ElMessage.error('修复过程中出现错误')
+    await ElMessageBox.confirm(
+      '一键修复将依次执行 DNS 重置、Winsock 重置和 IP 更新，过程中可能会短暂断网。确定要继续吗？',
+      '确认一键修复',
+      {
+        type: 'warning',
+        confirmButtonText: '确定修复',
+        cancelButtonText: '取消'
+      }
+    )
+  } catch {
+    return
+  }
+
+  loading.value.all = true
+  const errors = []
+  try {
+    try {
+      await window.electronAPI.resetDns()
+    } catch (e) {
+      errors.push('DNS 重置失败: ' + e)
+    }
+    try {
+      await window.electronAPI.resetWinsock()
+    } catch (e) {
+      errors.push('Winsock 重置失败: ' + e)
+    }
+    try {
+      await window.electronAPI.resetIp()
+    } catch (e) {
+      errors.push('IP 重置失败: ' + e)
+    }
+
+    if (errors.length > 0) {
+      ElMessage.error('修复过程中出现错误: ' + errors.join('; '))
+    } else {
+      ElMessage.success('网络修复完成，所有操作均已成功执行')
+    }
   } finally {
     loading.value.all = false
   }

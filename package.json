@@ -1,6 +1,6 @@
 {
   "name": "lao-wang-wei-hu-bao",
-  "version": "2.0.0",
+  "version": "2.2.0",
   "description": "老王维护宝 - 电脑定时任务与系统维护工具",
   "main": "electron/main.js",
   "scripts": {
@@ -12,7 +12,9 @@
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.1.0",
+    "electron-updater": "^6.8.11",
     "element-plus": "^2.3.14",
+    "ssh2": "^1.17.0",
     "systeminformation": "^5.21.0",
     "vue": "^3.3.4",
     "vue-router": "^4.2.4"
@@ -39,6 +41,11 @@
       "electron/**/*",
       "package.json"
     ],
+    "publish": {
+      "provider": "github",
+      "owner": "wgg223",
+      "repo": "pc-manager"
+    },
     "win": {
       "target": "nsis",
       "signAndEditExecutable": false

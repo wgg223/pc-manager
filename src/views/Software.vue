@@ -82,18 +82,24 @@ const refreshSoftware = async () => {
 const uninstall = async (item) => {
   try {
     await ElMessageBox.confirm(
-      `确定要卸载 "${item.name}" 吗？此操作不可撤销。`,
+      `确定要卸载 "${item.name}" 吗？此操作将调用系统卸载程序，卸载后无法恢复。`,
       '确认卸载',
-      { type: 'warning' }
+      { 
+        type: 'warning',
+        confirmButtonText: '确定卸载',
+        cancelButtonText: '取消'
+      }
     )
     
-    await window.electronAPI.uninstallSoftware(item.id, item.uninstallString)
-    ElMessage.success('卸载指令已发送')
-    refreshSoftware()
-  } catch (error) {
-    if (error !== 'cancel') {
-      ElMessage.error('卸载失败: ' + error)
+    try {
+      await window.electronAPI.uninstallSoftware(item.id, item.uninstallString)
+      ElMessage.success(`"${item.name}" 卸载指令已发送，请稍后刷新查看结果`)
+      refreshSoftware()
+    } catch (error) {
+      ElMessage.error(`卸载 "${item.name}" 失败: ${error}`)
     }
+  } catch {
+    // User cancelled the confirm dialog
   }
 }
 

@@ -52,6 +52,41 @@ const routes = [
     component: () => import('../views/Console.vue')
   },
   {
+    path: '/hosts',
+    name: 'HostsEditor',
+    component: () => import('../views/HostsEditor.vue')
+  },
+  {
+    path: '/system-repair',
+    name: 'SystemRepair',
+    component: () => import('../views/SystemRepair.vue')
+  },
+  {
+    path: '/services',
+    name: 'Services',
+    component: () => import('../views/Services.vue')
+  },
+  {
+    path: '/hardware-health',
+    name: 'HardwareHealth',
+    component: () => import('../views/HardwareHealth.vue')
+  },
+  {
+    path: '/ssh',
+    name: 'SSH',
+    component: () => import('../views/SSH.vue')
+  },
+  {
+    path: '/remote-desktop',
+    name: 'RemoteDesktop',
+    component: () => import('../views/RemoteDesktop.vue')
+  },
+  {
+    path: '/file-transfer',
+    name: 'FileTransfer',
+    component: () => import('../views/FileTransfer.vue')
+  },
+  {
     path: '/about',
     name: 'About',
     component: () => import('../views/About.vue')

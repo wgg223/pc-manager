@@ -161,7 +161,7 @@
     </el-card>
     
     <div class="refresh-section">
-      <el-button type="primary" @click="refreshInfo">
+      <el-button type="primary" @click="refreshInfo(true)">
         <el-icon><Refresh /></el-icon>
         刷新信息
       </el-button>
@@ -171,6 +171,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
+import { ElMessage } from 'element-plus'
 
 const systemInfo = ref({})
 const cpuUsage = ref(0)
@@ -180,6 +181,7 @@ const disks = ref([])
 const gpus = ref([])
 const networks = ref([])
 let timer = null
+let isFirstLoad = true
 
 const formatGB = (bytes) => {
   if (!bytes) return '0 GB'
@@ -199,7 +201,10 @@ const getProgressColor = (percentage) => {
   return '#F56C6C'
 }
 
-const refreshInfo = async () => {
+const refreshInfo = async (showResult = false) => {
+  let hasError = false
+  const errors = []
+
   try {
     const info = await window.electronAPI.getSystemInfo()
     systemInfo.value = info
@@ -222,14 +227,16 @@ const refreshInfo = async () => {
       networks.value = info.network.filter(n => !n.iface.includes('Loopback') && n.ip4)
     }
   } catch (error) {
-    console.error('获取系统信息失败:', error)
+    hasError = true
+    errors.push('获取系统信息失败: ' + error)
   }
   
   try {
     const usage = await window.electronAPI.getCpuUsage()
     cpuUsage.value = Math.round(usage)
   } catch (error) {
-    console.error('获取CPU使用率失败:', error)
+    hasError = true
+    errors.push('获取CPU使用率失败: ' + error)
   }
   
   try {
@@ -237,13 +244,25 @@ const refreshInfo = async () => {
     memoryInfo.value = mem
     memoryUsage.value = Math.round(parseFloat(mem.usagePercent))
   } catch (error) {
-    console.error('获取内存使用情况失败:', error)
+    hasError = true
+    errors.push('获取内存使用情况失败: ' + error)
+  }
+
+  if (showResult) {
+    if (hasError) {
+      ElMessage.error('刷新失败: ' + errors.join('; '))
+    } else {
+      ElMessage.success('系统信息已刷新')
+    }
+  } else if (isFirstLoad && hasError) {
+    ElMessage.error('加载系统信息失败，部分数据可能无法显示')
+    isFirstLoad = false
   }
 }
 
 onMounted(() => {
   refreshInfo()
-  timer = setInterval(refreshInfo, 5000)
+  timer = setInterval(() => refreshInfo(false), 5000)
 })
 
 onUnmounted(() => {

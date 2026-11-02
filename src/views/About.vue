@@ -42,6 +42,8 @@
             <CircleCheckFilled v-if="updateStatus === 'latest'" />
             <Download v-else-if="updateStatus === 'available'" />
             <Loading v-else-if="updateStatus === 'checking'" />
+            <Download v-else-if="updateStatus === 'downloading'" />
+            <CircleCheckFilled v-else-if="updateStatus === 'downloaded'" />
             <WarningFilled v-else />
           </el-icon>
           <div class="update-text">
@@ -49,10 +51,20 @@
             <p>{{ updateMessage }}</p>
           </div>
         </div>
+
+        <div v-if="updateStatus === 'downloading'" class="download-progress">
+          <el-progress :percentage="downloadPercent" :stroke-width="18" :text-inside="true" />
+          <div class="progress-detail">
+            <span>{{ formatBytes(downloadSpeed) }}/s</span>
+            <span>{{ formatBytes(downloadTransferred) }} / {{ formatBytes(downloadTotal) }}</span>
+          </div>
+        </div>
+
         <div class="update-actions">
           <el-button 
             type="primary" 
             :loading="updateStatus === 'checking'"
+            :disabled="updateStatus === 'downloading'"
             @click="checkUpdate"
           >
             <el-icon><Refresh /></el-icon>
@@ -61,10 +73,26 @@
           <el-button 
             v-if="updateStatus === 'available'"
             type="success"
+            @click="startDownload"
+          >
+            <el-icon><Download /></el-icon>
+            下载更新
+          </el-button>
+          <el-button 
+            v-if="updateStatus === 'downloaded'"
+            type="danger"
+            @click="installNow"
+          >
+            <el-icon><CircleCheckFilled /></el-icon>
+            立即安装并重启
+          </el-button>
+          <el-button 
+            v-if="updateStatus === 'available' && !autoUpdateSupported"
+            type="primary"
             @click="openGithub"
           >
             <el-icon><Download /></el-icon>
-            前往下载
+            前往 GitHub 下载
           </el-button>
         </div>
       </div>
@@ -108,6 +136,13 @@
           <li>软件卸载：查看和卸载已安装软件</li>
           <li>壁纸更换：设置桌面壁纸</li>
           <li>控制台：执行系统命令</li>
+          <li>Hosts 编辑：管理系统 Hosts 文件</li>
+          <li>系统修复：运行 SFC 和 DISM 修复系统</li>
+          <li>服务管理：查看和管理 Windows 服务</li>
+          <li>硬件健康：查看硬盘和电池状态</li>
+          <li>SSH 远程：通过 SSH 连接远程服务器</li>
+          <li>远程桌面：管理 RDP 远程桌面连接</li>
+          <li>文件传输：通过 SFTP 传输文件</li>
         </ul>
         
         <h4>三、使用须知</h4>
@@ -143,19 +178,28 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 
-const version = ref('1.0.0')
+const version = ref('2.2.0')
 const updateStatus = ref('idle')
 const agreementVisible = ref(false)
+const autoUpdateSupported = ref(false)
+
+const downloadPercent = ref(0)
+const downloadSpeed = ref(0)
+const downloadTransferred = ref(0)
+const downloadTotal = ref(0)
+const newVersion = ref('')
 
 const updateTitle = computed(() => {
   const titles = {
     idle: '未检查',
-    checking: '检查中...',
+    checking: '正在检查更新...',
     latest: '已是最新版本',
-    available: '发现新版本',
+    available: `发现新版本 v${newVersion.value}`,
+    downloading: '正在下载更新...',
+    downloaded: '更新已下载完成',
     error: '检查失败'
   }
   return titles[updateStatus.value]
@@ -166,7 +210,11 @@ const updateMessage = computed(() => {
     idle: '点击"检查更新"按钮查看是否有新版本',
     checking: '正在连接服务器检查更新...',
     latest: '您当前使用的已是最新版本，无需更新',
-    available: '发现新版本，请前往 GitHub 下载最新版本',
+    available: autoUpdateSupported.value
+      ? '点击"下载更新"按钮自动下载并安装新版本'
+      : '自动更新仅在安装包模式下可用，请前往 GitHub 下载最新版本',
+    downloading: `正在下载 v${newVersion.value}，请耐心等待...`,
+    downloaded: '下载完成，点击"立即安装并重启"完成更新',
     error: '无法连接到更新服务器，请检查网络后重试'
   }
   return messages[updateStatus.value]
@@ -178,14 +226,40 @@ const updateIconClass = computed(() => {
     checking: 'icon-checking',
     latest: 'icon-latest',
     available: 'icon-available',
+    downloading: 'icon-checking',
+    downloaded: 'icon-latest',
     error: 'icon-error'
   }
   return classes[updateStatus.value]
 })
 
+const formatBytes = (bytes) => {
+  if (!bytes || bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
+}
+
 const checkUpdate = async () => {
   updateStatus.value = 'checking'
-  
+  downloadPercent.value = 0
+
+  try {
+    const result = await window.electronAPI.checkForUpdate()
+    if (result && !result.success) {
+      autoUpdateSupported.value = false
+      await checkUpdateFromGithub()
+    } else {
+      autoUpdateSupported.value = true
+    }
+  } catch {
+    autoUpdateSupported.value = false
+    await checkUpdateFromGithub()
+  }
+}
+
+const checkUpdateFromGithub = async () => {
   try {
     const response = await fetch('https://api.github.com/repos/wgg223/pc-manager/releases/latest')
     if (response.ok) {
@@ -194,14 +268,38 @@ const checkUpdate = async () => {
       
       if (compareVersions(latestVersion, version.value) > 0) {
         updateStatus.value = 'available'
+        newVersion.value = latestVersion
+        ElMessage.success(`发现新版本 v${latestVersion}，当前版本 v${version.value}`)
       } else {
         updateStatus.value = 'latest'
+        ElMessage.success('当前已是最新版本')
       }
     } else {
       updateStatus.value = 'error'
+      ElMessage.error('检查更新失败: 服务器返回错误 (HTTP ' + response.status + ')')
     }
+  } catch {
+    updateStatus.value = 'error'
+    ElMessage.error('检查更新失败: 无法连接到更新服务器，请检查网络连接后重试')
+  }
+}
+
+const startDownload = async () => {
+  updateStatus.value = 'downloading'
+  downloadPercent.value = 0
+  try {
+    await window.electronAPI.downloadUpdate()
   } catch (error) {
     updateStatus.value = 'error'
+    ElMessage.error('下载更新失败: ' + error)
+  }
+}
+
+const installNow = async () => {
+  try {
+    await window.electronAPI.installUpdate()
+  } catch (error) {
+    ElMessage.error('安装更新失败: ' + error)
   }
 }
 
@@ -232,6 +330,46 @@ const acceptAgreement = () => {
   agreementVisible.value = false
   ElMessage.success('已同意用户协议')
 }
+
+onMounted(async () => {
+  try {
+    const appVersion = await window.electronAPI.getAppVersion()
+    if (appVersion) version.value = appVersion
+  } catch {}
+
+  window.electronAPI.onUpdateStatus((data) => {
+    switch (data.type) {
+      case 'checking':
+        updateStatus.value = 'checking'
+        break
+      case 'available':
+        updateStatus.value = 'available'
+        newVersion.value = data.version || ''
+        autoUpdateSupported.value = true
+        break
+      case 'latest':
+        updateStatus.value = 'latest'
+        autoUpdateSupported.value = true
+        break
+      case 'downloading':
+        updateStatus.value = 'downloading'
+        downloadPercent.value = data.percent || 0
+        downloadSpeed.value = data.speed || 0
+        downloadTransferred.value = data.transferred || 0
+        downloadTotal.value = data.total || 0
+        break
+      case 'downloaded':
+        updateStatus.value = 'downloaded'
+        downloadPercent.value = 100
+        ElMessage.success('更新下载完成，可以安装重启了')
+        break
+      case 'error':
+        updateStatus.value = 'error'
+        ElMessage.error(data.message || '更新过程中发生错误')
+        break
+    }
+  })
+})
 </script>
 
 <style scoped>
@@ -335,6 +473,19 @@ const acceptAgreement = () => {
   color: #606266;
 }
 
+.download-progress {
+  width: 100%;
+  max-width: 400px;
+}
+
+.progress-detail {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 12px;
+  color: #909399;
+}
+
 .icon-idle {
   color: #909399;
 }
@@ -364,6 +515,8 @@ const acceptAgreement = () => {
 .update-actions {
   display: flex;
   gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .agreement-content {

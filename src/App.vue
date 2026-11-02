@@ -80,6 +80,41 @@
             <span>控制台</span>
           </el-menu-item>
 
+          <el-menu-item index="/hosts">
+            <el-icon><Document /></el-icon>
+            <span>Hosts 编辑</span>
+          </el-menu-item>
+
+          <el-menu-item index="/system-repair">
+            <el-icon><SetUp /></el-icon>
+            <span>系统修复</span>
+          </el-menu-item>
+
+          <el-menu-item index="/services">
+            <el-icon><Operation /></el-icon>
+            <span>服务管理</span>
+          </el-menu-item>
+
+          <el-menu-item index="/hardware-health">
+            <el-icon><DataLine /></el-icon>
+            <span>硬件健康</span>
+          </el-menu-item>
+
+          <el-menu-item index="/ssh">
+            <el-icon><Connection /></el-icon>
+            <span>SSH 远程</span>
+          </el-menu-item>
+
+          <el-menu-item index="/remote-desktop">
+            <el-icon><Monitor /></el-icon>
+            <span>远程桌面</span>
+          </el-menu-item>
+
+          <el-menu-item index="/file-transfer">
+            <el-icon><Upload /></el-icon>
+            <span>文件传输</span>
+          </el-menu-item>
+
           <el-menu-item index="/about">
             <el-icon><InfoFilled /></el-icon>
             <span>关于软件</span>
@@ -119,6 +154,13 @@
           <li>软件卸载：查看和卸载已安装软件</li>
           <li>壁纸更换：设置桌面壁纸</li>
           <li>控制台：执行系统命令</li>
+          <li>Hosts 编辑：管理系统 Hosts 文件</li>
+          <li>系统修复：运行 SFC 和 DISM 修复系统</li>
+          <li>服务管理：查看和管理 Windows 服务</li>
+          <li>硬件健康：查看硬盘和电池状态</li>
+          <li>SSH 远程：通过 SSH 连接远程服务器</li>
+          <li>远程桌面：管理 RDP 远程桌面连接</li>
+          <li>文件传输：通过 SFTP 传输文件</li>
         </ul>
 
         <h4>三、使用须知</h4>

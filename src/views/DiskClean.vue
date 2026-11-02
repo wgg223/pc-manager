@@ -76,6 +76,7 @@
           <el-tag :type="item.status === 'success' ? 'success' : 'danger'" size="small">
             {{ item.status === 'success' ? '成功' : '失败' }}
           </el-tag>
+          <span v-if="item.status === 'error' && item.message" class="error-message">{{ item.message }}</span>
         </div>
       </div>
     </el-card>
@@ -84,7 +85,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 
 const cleaning = ref(false)
 const cleanResult = ref(null)
@@ -104,6 +105,25 @@ const formatSize = (bytes) => {
 }
 
 const startClean = async () => {
+  if (!cleanOptions.value.temp && !cleanOptions.value.cache && !cleanOptions.value.recycle) {
+    ElMessage.warning('请至少选择一项清理内容')
+    return
+  }
+
+  try {
+    await ElMessageBox.confirm(
+      '清理操作将删除所选文件，删除后无法恢复。确定要继续吗？',
+      '确认清理',
+      {
+        type: 'warning',
+        confirmButtonText: '确定清理',
+        cancelButtonText: '取消'
+      }
+    )
+  } catch {
+    return
+  }
+
   cleaning.value = true
   cleanResult.value = null
   
@@ -112,9 +132,13 @@ const startClean = async () => {
     const results = []
     
     if (cleanOptions.value.temp) {
-      const result = await window.electronAPI.cleanTempFiles()
-      totalCleaned += result.totalCleaned
-      results.push(...result.results)
+      try {
+        const result = await window.electronAPI.cleanTempFiles()
+        totalCleaned += result.totalCleaned
+        results.push(...result.results)
+      } catch (e) {
+        results.push({ path: '临时文件', status: 'error', message: String(e) })
+      }
     }
     
     if (cleanOptions.value.recycle) {
@@ -122,12 +146,19 @@ const startClean = async () => {
         await window.electronAPI.emptyRecycleBin()
         results.push({ path: '回收站', status: 'success' })
       } catch (e) {
-        results.push({ path: '回收站', status: 'error', message: e })
+        results.push({ path: '回收站', status: 'error', message: String(e) })
       }
     }
     
     cleanResult.value = { totalCleaned, results }
-    ElMessage.success('清理完成')
+
+    const hasError = results.some(r => r.status === 'error')
+    if (hasError) {
+      const failedItems = results.filter(r => r.status === 'error').map(r => r.path).join('、')
+      ElMessage.warning(`清理完成，但以下项目失败: ${failedItems}`)
+    } else {
+      ElMessage.success(`清理完成，共释放 ${formatSize(totalCleaned)} 空间`)
+    }
   } catch (error) {
     ElMessage.error('清理失败: ' + error)
   } finally {
@@ -249,5 +280,15 @@ const startClean = async () => {
 
 .error {
   color: #F56C6C;
+}
+
+.error-message {
+  font-size: 12px;
+  color: #F56C6C;
+  margin-left: 4px;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>
