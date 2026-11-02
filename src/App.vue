@@ -40,6 +40,11 @@
             <span>磁盘清理</span>
           </el-menu-item>
 
+          <el-menu-item index="/junk-clean">
+            <el-icon><Search /></el-icon>
+            <span>垃圾清理</span>
+          </el-menu-item>
+
           <el-menu-item index="/system-info">
             <el-icon><DataAnalysis /></el-icon>
             <span>系统信息</span>
@@ -161,6 +166,7 @@
           <li>SSH 远程：通过 SSH 连接远程服务器</li>
           <li>远程桌面：管理 RDP 远程桌面连接</li>
           <li>文件传输：通过 SFTP 传输文件</li>
+          <li>垃圾清理：全盘扫描垃圾文件，智能分级清理</li>
         </ul>
 
         <h4>三、使用须知</h4>

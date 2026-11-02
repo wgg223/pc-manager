@@ -102,5 +102,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   sftpMkdir: (id, remotePath) => ipcRenderer.invoke('sftp-mkdir', id, remotePath),
   sftpDisconnect: (id) => ipcRenderer.invoke('sftp-disconnect', id),
   sftpStat: (id, remotePath) => ipcRenderer.invoke('sftp-stat', id, remotePath),
-  sftpGetHomedir: (id) => ipcRenderer.invoke('sftp-get-homedir', id)
+  sftpGetHomedir: (id) => ipcRenderer.invoke('sftp-get-homedir', id),
+  
+  // 垃圾文件扫描
+  scanJunkFiles: (options) => ipcRenderer.invoke('scan-junk-files', options),
+  cleanJunkFiles: (filePaths) => ipcRenderer.invoke('clean-junk-files', filePaths),
+  getAvailableDrives: () => ipcRenderer.invoke('get-available-drives')
 })

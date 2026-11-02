@@ -143,6 +143,7 @@
           <li>SSH 远程：通过 SSH 连接远程服务器</li>
           <li>远程桌面：管理 RDP 远程桌面连接</li>
           <li>文件传输：通过 SFTP 传输文件</li>
+          <li>垃圾清理：全盘扫描垃圾文件，智能分级清理</li>
         </ul>
         
         <h4>三、使用须知</h4>
@@ -181,7 +182,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 
-const version = ref('2.2.0')
+const version = ref('2.3.0')
 const updateStatus = ref('idle')
 const agreementVisible = ref(false)
 const autoUpdateSupported = ref(false)

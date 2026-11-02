@@ -1096,3 +1096,249 @@ ipcMain.handle('sftp-get-homedir', async (event, id) => {
     })
   })
 })
+
+// 垃圾文件扫描与清理
+function getAvailableDrives() {
+  const drives = []
+  for (let code = 65; code <= 90; code++) {
+    const drive = String.fromCharCode(code) + ':'
+    try {
+      if (fs.existsSync(drive + '\\')) {
+        const stat = fs.statSync(drive + '\\')
+        if (stat.isDirectory()) {
+          drives.push(drive)
+        }
+      }
+    } catch (e) {}
+  }
+  return drives
+}
+
+function scanDirectory(dirPath, patterns, maxDepth, currentDepth, results, level, category) {
+  if (currentDepth > maxDepth) return
+  try {
+    const entries = fs.readdirSync(dirPath, { withFileTypes: true })
+    for (const entry of entries) {
+      const fullPath = path.join(dirPath, entry.name)
+      try {
+        if (entry.isDirectory()) {
+          const dirName = entry.name.toLowerCase()
+          if (['$recycle.bin', 'system volume information', 'windows', 'program files', 'program files (x86)'].includes(dirName)) continue
+          scanDirectory(fullPath, patterns, maxDepth, currentDepth + 1, results, level, category)
+        } else if (entry.isFile()) {
+          const ext = path.extname(entry.name).toLowerCase()
+          const name = entry.name.toLowerCase()
+          let matched = false
+          for (const pattern of patterns) {
+            if (pattern.startsWith('*.')) {
+              if (ext === pattern.slice(1)) { matched = true; break }
+            } else if (pattern.startsWith('*.') === false) {
+              if (name.includes(pattern.toLowerCase())) { matched = true; break }
+            }
+          }
+          if (matched) {
+            try {
+              const stat = fs.statSync(fullPath)
+              results.push({
+                path: fullPath,
+                name: entry.name,
+                size: stat.size,
+                modified: stat.mtimeMs,
+                level,
+                category
+              })
+            } catch (e) {}
+          }
+        }
+      } catch (e) {}
+    }
+  } catch (e) {}
+}
+
+function scanFixedPaths(drive, results) {
+  const userHome = process.env.USERPROFILE || (drive + '\\Users\\Default')
+  const tempDirs = [
+    { path: process.env.TEMP || (userHome + '\\AppData\\Local\\Temp'), level: 1, category: '临时文件' },
+    { path: drive + '\\Windows\\Temp', level: 1, category: '系统临时文件' },
+    { path: drive + '\\Windows\\Prefetch', level: 2, category: '预读取缓存' }
+  ]
+
+  for (const td of tempDirs) {
+    try {
+      if (!fs.existsSync(td.path)) continue
+      const entries = fs.readdirSync(td.path, { withFileTypes: true })
+      for (const entry of entries) {
+        const fullPath = path.join(td.path, entry.name)
+        try {
+          const stat = fs.statSync(fullPath)
+          if (stat.isFile()) {
+            results.push({
+              path: fullPath,
+              name: entry.name,
+              size: stat.size,
+              modified: stat.mtimeMs,
+              level: td.level,
+              category: td.category
+            })
+          } else if (stat.isDirectory()) {
+            const subEntries = fs.readdirSync(fullPath, { withFileTypes: true })
+            for (const sub of subEntries) {
+              try {
+                const subPath = path.join(fullPath, sub.name)
+                const subStat = fs.statSync(subPath)
+                if (subStat.isFile()) {
+                  results.push({
+                    path: subPath,
+                    name: sub.name,
+                    size: subStat.size,
+                    modified: subStat.mtimeMs,
+                    level: td.level,
+                    category: td.category
+                  })
+                }
+              } catch (e) {}
+            }
+          }
+        } catch (e) {}
+      }
+    } catch (e) {}
+  }
+
+  const browserCaches = [
+    { path: userHome + '\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Cache', level: 2, category: '浏览器缓存' },
+    { path: userHome + '\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Code Cache', level: 2, category: '浏览器缓存' },
+    { path: userHome + '\\AppData\\Local\\Microsoft\\Edge\\User Data\\Default\\Cache', level: 2, category: '浏览器缓存' },
+    { path: userHome + '\\AppData\\Local\\Microsoft\\Edge\\User Data\\Default\\Code Cache', level: 2, category: '浏览器缓存' },
+    { path: userHome + '\\AppData\\Local\\Mozilla\\Firefox\\Profiles', level: 2, category: '浏览器缓存' },
+    { path: userHome + '\\AppData\\Local\\Temp\\chrome_crashpad', level: 1, category: '崩溃报告' }
+  ]
+
+  for (const bc of browserCaches) {
+    try {
+      if (!fs.existsSync(bc.path)) continue
+      scanDirectory(bc.path, ['*.*'], 2, 0, results, bc.level, bc.category)
+    } catch (e) {}
+  }
+
+  const systemJunk = [
+    { path: drive + '\\Windows\\Logs', level: 2, category: '系统日志' },
+    { path: drive + '\\Windows\\SoftwareDistribution\\Download', level: 2, category: '更新缓存' },
+    { path: userHome + '\\AppData\\Local\\CrashDumps', level: 1, category: '崩溃转储' },
+    { path: drive + '\\ProgramData\\Microsoft\\Windows\\WER', level: 2, category: '错误报告' },
+    { path: userHome + '\\AppData\\Local\\Microsoft\\Windows\\INetCache', level: 2, category: 'IE 缓存' },
+    { path: userHome + '\\AppData\\Local\\Microsoft\\Windows\\Explorer', level: 3, category: '缩略图缓存' }
+  ]
+
+  for (const sj of systemJunk) {
+    try {
+      if (!fs.existsSync(sj.path)) continue
+      scanDirectory(sj.path, ['*.*'], 2, 0, results, sj.level, sj.category)
+    } catch (e) {}
+  }
+
+  const thumbCachePatterns = ['thumbcache_']
+  try {
+    const explorerPath = userHome + '\\AppData\\Local\\Microsoft\\Windows\\Explorer'
+    if (fs.existsSync(explorerPath)) {
+      const entries = fs.readdirSync(explorerPath)
+      for (const entry of entries) {
+        const fullPath = path.join(explorerPath, entry)
+        try {
+          const stat = fs.statSync(fullPath)
+          if (stat.isFile() && thumbCachePatterns.some(p => entry.toLowerCase().startsWith(p))) {
+            results.push({
+              path: fullPath,
+              name: entry,
+              size: stat.size,
+              modified: stat.mtimeMs,
+              level: 3,
+              category: '缩略图缓存'
+            })
+          }
+        } catch (e) {}
+      }
+    }
+  } catch (e) {}
+}
+
+ipcMain.handle('scan-junk-files', async (event, options) => {
+  const drives = getAvailableDrives()
+  const results = []
+  const scanDrives = (options && options.drives && options.drives.length > 0) ? options.drives : drives
+
+  for (const drive of scanDrives) {
+    scanFixedPaths(drive, results)
+
+    const junkPatterns = {
+      1: { patterns: ['*.tmp', '*.temp', '*.bak', '*.old', '*.log', '*.dmp', 'thumbs.db', 'desktop.ini', '~$'], category: '临时文件', depth: 4 },
+      2: { patterns: ['*.cache', '*.chk', '*.gid', '*.err', '*.old'], category: '系统垃圾', depth: 3 },
+      3: { patterns: ['*.msi', '*.exe', '*.zip', '*.rar', '*.7z'], category: '安装包残留', depth: 2 }
+    }
+
+    for (const [level, config] of Object.entries(junkPatterns)) {
+      const searchDirs = [
+        drive + '\\Users',
+        process.env.TEMP || (drive + '\\Users\\Default\\AppData\\Local\\Temp')
+      ]
+      for (const dir of searchDirs) {
+        try {
+          if (!fs.existsSync(dir)) continue
+          scanDirectory(dir, config.patterns, config.depth, 0, results, parseInt(level), config.category)
+        } catch (e) {}
+      }
+    }
+  }
+
+  const uniqueResults = []
+  const seen = new Set()
+  for (const r of results) {
+    if (!seen.has(r.path)) {
+      seen.add(r.path)
+      uniqueResults.push(r)
+    }
+  }
+
+  const summary = {
+    total: uniqueResults.length,
+    totalSize: uniqueResults.reduce((sum, f) => sum + f.size, 0),
+    byLevel: { 1: { count: 0, size: 0 }, 2: { count: 0, size: 0 }, 3: { count: 0, size: 0 } },
+    byCategory: {}
+  }
+
+  for (const f of uniqueResults) {
+    if (summary.byLevel[f.level]) {
+      summary.byLevel[f.level].count++
+      summary.byLevel[f.level].size += f.size
+    }
+    if (!summary.byCategory[f.category]) {
+      summary.byCategory[f.category] = { count: 0, size: 0, level: f.level }
+    }
+    summary.byCategory[f.category].count++
+    summary.byCategory[f.category].size += f.size
+  }
+
+  return { files: uniqueResults, summary, drives }
+})
+
+ipcMain.handle('clean-junk-files', async (event, filePaths) => {
+  let cleaned = 0
+  let totalSize = 0
+  const errors = []
+
+  for (const filePath of filePaths) {
+    try {
+      const stat = fs.statSync(filePath)
+      fs.unlinkSync(filePath)
+      cleaned++
+      totalSize += stat.size
+    } catch (e) {
+      errors.push({ path: filePath, error: e.message })
+    }
+  }
+
+  return { cleaned, totalSize, errors }
+})
+
+ipcMain.handle('get-available-drives', async () => {
+  return getAvailableDrives()
+})

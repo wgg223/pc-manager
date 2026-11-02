@@ -12,6 +12,11 @@ const routes = [
     component: () => import('../views/DiskClean.vue')
   },
   {
+    path: '/junk-clean',
+    name: 'JunkClean',
+    component: () => import('../views/JunkClean.vue')
+  },
+  {
     path: '/system-info',
     name: 'SystemInfo',
     component: () => import('../views/SystemInfo.vue')
